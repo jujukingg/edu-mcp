@@ -1,54 +1,82 @@
-# Pronote MCP Server
+# Pronote MCP
 
-Serveur MCP (Model Context Protocol) haute performance pour connecter l'IA Antigravity Gemini à l'espace Pronote élève et parent via pronotepy.
+Serveur Model Context Protocol (MCP) pour la consultation et l'interaction avec les espaces Pronote (élève et parent).
 
-## 🌟 Fonctionnalités
+Le serveur s'appuie sur `FastMCP`, `pronotepy` et `pydantic` pour exposer les données scolaires sous forme d'outils, de ressources et de modèles de prompts standardisés.
 
-- **Session persistante & Anti-Alerte** : Cache local de session (`.session_cache.pkl`) et identifiant matériel fixe (`.device_uuid`) évitant les alertes répétées par mail/SMS de nouvelle connexion.
-- **Double Authentification (2FA)** : Support natif du code PIN à 4 chiffres et nom d'appareil personnalisé.
-- **Bypass SSL Windows** : Injection automatique des certificats de confiance système via `truststore` pour pallier les erreurs SSL courantes sous Windows.
-- **Support Élève & Parent** : Navigation multi-enfants et basculement automatique.
-- **12 Outils MCP** :
-  - `pronote_get_user_info` : Profil, classe, établissement, statut.
-  - `pronote_list_children` : Liste des enfants reliés (compte parent).
-  - `pronote_select_child` : Sélection de l'enfant actif.
-  - `pronote_list_ents` : Liste des ENT supportés.
-  - `pronote_get_timetable` : Emploi du temps par plage de dates.
-  - `pronote_get_homework` : Cahier de texte et devoirs à faire.
-  - `pronote_set_homework_done` : Validation d'un devoir fait.
-  - `pronote_get_grades` : Notes et évaluations individuelles.
-  - `pronote_get_averages` : Moyennes de l'élève et de la classe.
-  - `pronote_get_absences` : Absences, retards et punitions.
-  - `pronote_get_news` : Actualités et sondages de l'établissement.
-  - `pronote_get_canteen_menu` : Menus de la cantine scolaire.
-- **4 Ressources MCP** :
-  - `pronote://student/profile`
-  - `pronote://timetable/today`
-  - `pronote://homework/pending`
-  - `pronote://grades/overview`
-- **2 Prompts MCP** :
-  - `pronote_daily_briefing` : Briefing complet du matin.
-  - `pronote_homework_planner` : Planificateur de travail et révisions.
+---
 
-## 🚀 Installation & Configuration
+## Caractéristiques techniques
 
-### 1. Prérequis
-- Python 3.10+
-- Accès internet vers votre instance Pronote
+- **Gestion de session persistante** : Sauvegarde locale de l'état d'authentification (`.session_cache.pkl`) et identifiant matériel fixe (`.device_uuid`) afin d'éviter les alertes de sécurité répétées lors des reconnexions.
+- **Heartbeat en tâche de fond** : Maintien de la session active via un thread démon pour les requêtes espacées dans le temps.
+- **Prise en charge des certificats système** : Intégration de `truststore` pour résoudre les erreurs de validation SSL sur les environnements Windows protégés par antivirus ou pare-feu applicatif.
+- **Double espace élève / parent** : Prise en charge des comptes élèves ainsi que des comptes parents avec sélection d'enfant.
+- **Typage strict** : Validation de toutes les entrées et sorties via des modèles Pydantic immuables.
 
-### 2. Configuration (`.env`)
-Copiez `.env.example` en `.env` et complétez vos identifiants :
-```env
-PRONOTE_URL=https://demo.pronote.index-education.net/pronote/eleve.html
-PRONOTE_USERNAME=votre_identifiant
-PRONOTE_PASSWORD=votre_mot_de_passe
-PRONOTE_ACCOUNT_PIN=0000
-PRONOTE_DEVICE_NAME=Mon Appareil MCP
-PRONOTE_ACCOUNT_TYPE=student
-PRONOTE_SESSION_FILE=.session_cache.pkl
+---
+
+## Outils disponibles
+
+| Outil | Description |
+|---|---|
+| `pronote_get_user_info` | Récupère les données du compte actif (nom, classe, établissement). |
+| `pronote_get_timetable` | Liste l'emploi du temps pour une date ou une période donnée. |
+| `pronote_get_homework` | Liste le cahier de texte et les devoirs à rendre. |
+| `pronote_set_homework_done` | Marque un devoir comme effectué ou à faire. |
+| `pronote_get_grades` | Retourne les évaluations et notes individuelles par période. |
+| `pronote_get_averages` | Retourne les moyennes de l'élève et de la classe par matière. |
+| `pronote_get_absences` | Liste les absences, retards et punitions. |
+| `pronote_get_canteen_menu` | Affiche les menus de la cantine par catégorie de plat. |
+| `pronote_get_news` | Liste les communications et sondages de l'établissement. |
+| `pronote_list_children` | Liste les enfants rattachés à un compte parent. |
+| `pronote_select_child` | Sélectionne l'enfant ciblé pour les requêtes suivantes. |
+| `pronote_list_ents` | Liste les fournisseurs ENT compatibles. |
+
+---
+
+## Ressources et Prompts
+
+### Ressources
+
+- `pronote://student/profile` : Profil et métadonnées de scolarité (JSON).
+- `pronote://timetable/today` : Emploi du temps du jour (JSON).
+- `pronote://homework/pending` : Devoirs non effectués à échéance de 14 jours (JSON).
+- `pronote://grades/overview` : Synthèse globale des moyennes de périodes (JSON).
+
+### Prompts
+
+- `pronote_daily_briefing` : Modèle de synthèse matinale (cours, devoirs du jour, repas et actualités).
+- `pronote_homework_planner` : Modèle d'organisation et de priorisation des révisions.
+
+---
+
+## Configuration
+
+Copier le fichier d'exemple pour définir vos variables locales :
+
+```bash
+cp .env.example .env
 ```
 
-### 3. Intégration dans un client MCP (`mcp_config.json` ou `claude_desktop_config.json`)
+### Variables principales
+
+| Variable | Description |
+|---|---|
+| `PRONOTE_URL` | URL complète de l'espace Pronote (ex. `https://demo.pronote.index-education.net/pronote/eleve.html`). |
+| `PRONOTE_USERNAME` | Identifiant de connexion direct ou ENT. |
+| `PRONOTE_PASSWORD` | Mot de passe associé. |
+| `PRONOTE_ENT` | Identifiant du connecteur ENT (optionnel, ex. `monbureaunumerique`, `ile_de_france`). |
+| `PRONOTE_ACCOUNT_PIN` | Code PIN à 4 chiffres en cas de double authentification. |
+| `PRONOTE_DEVICE_NAME` | Nom d'appareil affiché dans Pronote (défaut : `MCP Assistant`). |
+| `PRONOTE_ACCOUNT_TYPE` | Type de compte : `student` ou `parent`. |
+| `PRONOTE_SESSION_FILE` | Emplacement du cache de session local (défaut : `.session_cache.pkl`). |
+
+---
+
+## Intégration client MCP
+
+Exemple de bloc de configuration pour `mcp_config.json` ou `claude_desktop_config.json` :
 
 ```json
 {
@@ -62,10 +90,20 @@ PRONOTE_SESSION_FILE=.session_cache.pkl
 }
 ```
 
-> **Note Windows** : Indiquez le chemin absolu vers le dossier du projet (ex. `"C:\\projets\\pronote_mcp"`).
+*Sous Windows, remplacer le chemin par le dossier absolu correspondant, par exemple `"C:\\projets\\pronote_mcp"`.*
+
+---
+
+## Tests
+
+Pour exécuter les tests unitaires :
+
+```bash
+pytest -v
 ```
 
-### 4. Tests
-```powershell
-.\venv\Scripts\pytest -v
-```
+---
+
+## Licence
+
+Ce projet est distribué sous licence MIT.

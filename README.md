@@ -1,6 +1,12 @@
-# Pronote MCP
+<p align="center">
+  <img src="assets/logo.png" alt="Pronote MCP" width="96" />
+</p>
 
-Serveur Model Context Protocol (MCP) pour la consultation et l'interaction avec les espaces Pronote (élève et parent).
+<h1 align="center">Pronote MCP</h1>
+
+<p align="center">
+  Serveur Model Context Protocol (MCP) pour la consultation et l'interaction avec les espaces Pronote (élève et parent).
+</p>
 
 Le serveur s'appuie sur `FastMCP`, `pronotepy` et `pydantic` pour exposer les données scolaires sous forme d'outils, de ressources et de modèles de prompts standardisés.
 

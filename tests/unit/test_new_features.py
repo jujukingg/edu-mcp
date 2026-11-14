@@ -334,12 +334,16 @@ def test_save_env_config_and_lazy_settings(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_unconfigured_server_starts_and_triggers_popup(monkeypatch, tmp_path):
-    env_file = tmp_path / ".env"
+async def test_unconfigured_server_guides_chat_setup(monkeypatch, tmp_path):
     monkeypatch.setattr("pronote_mcp.server.load_settings_or_none", lambda: None)
     server = create_server()
     tools = await server.list_tools()
     assert "pronote_setup_account" in {t.name for t in tools}
+
+    mgr = PronoteSessionManager(None)
+    monkeypatch.setattr("pronote_mcp.client.load_settings_or_none", lambda: None)
+    with pytest.raises(RuntimeError, match="pronote_setup_account"):
+        await mgr.ensure_configured()
 
     new_settings = PronoteSettings(
         url="https://demo.pronote.local/eleve.html",
@@ -347,10 +351,91 @@ async def test_unconfigured_server_starts_and_triggers_popup(monkeypatch, tmp_pa
         password="pwd",
     )
     monkeypatch.setattr(
-        "pronote_mcp.client.open_setup_popup",
-        lambda *args, **kwargs: new_settings,
+        "pronote_mcp.browser_auth.authenticate_via_browser",
+        lambda **kwargs: new_settings,
     )
-    mgr = PronoteSessionManager(None)
-    monkeypatch.setattr("pronote_mcp.client.load_settings_or_none", lambda: None)
-    resolved = await mgr.ensure_configured()
+    resolved = await mgr.configure_via_browser(
+        pronote_url="https://demo.pronote.local/eleve.html",
+        account_type="student",
+    )
     assert resolved.username == "bob"
+
+
+def test_setup_validation_and_live_verification(tmp_path):
+    from pronote_mcp.setup_ui import validate_setup_inputs, verify_and_save_credentials
+
+    assert validate_setup_inputs("", "u", "p") is not None
+    assert validate_setup_inputs("not-a-url", "u", "p") is not None
+    assert validate_setup_inputs("https://demo.pronote.local/eleve.html", "u", "p", "12a4") is not None
+    assert validate_setup_inputs("https://demo.pronote.local/eleve.html", "u", "p", "1234") is None
+
+    env_file = tmp_path / ".env"
+    payload = {
+        "PRONOTE_URL": "https://demo.pronote.local/eleve.html",
+        "PRONOTE_USERNAME": "alice",
+        "PRONOTE_PASSWORD": "bad",
+    }
+
+    class FailingConnector:
+        def _connect_sync(self):
+            raise ConnectionError("Identifiants invalides")
+
+    with pytest.raises(ConnectionError):
+        verify_and_save_credentials(payload, env_path=env_file, connector_factory=lambda _: FailingConnector())
+    assert not env_file.exists()
+
+    class OkConnector:
+        def __init__(self):
+            self.called = False
+
+        def _connect_sync(self):
+            self.called = True
+            return object()
+
+    connector = OkConnector()
+    saved = verify_and_save_credentials(payload, env_path=env_file, connector_factory=lambda _: connector)
+    assert connector.called is True
+    assert env_file.exists()
+    assert saved.username == "alice"
+
+
+def test_qr_setup_validation_and_token_persistence(tmp_path):
+    from pronote_mcp.setup_ui import validate_qr_inputs, verify_and_save_qr_credentials
+
+    assert validate_qr_inputs("not-json", "1234") is not None
+    assert validate_qr_inputs('{"login": "a"}', "1234") is not None
+    assert validate_qr_inputs('{"login": "a", "jeton": "t", "url": "https://x"}', "12") is not None
+    assert validate_qr_inputs('{"login": "a", "jeton": "t", "url": "https://x"}', "1234") is None
+
+    env_file = tmp_path / ".env"
+    qr_json = '{"login": "alice", "jeton": "abc", "url": "https://demo.pronote.local/eleve.html"}'
+
+    class FakeQRClient:
+        logged_in = True
+
+        def export_credentials(self):
+            return {
+                "url": "https://demo.pronote.local/eleve.html",
+                "username": "alice_tok",
+                "password": "secret_long_token",
+                "uuid": "uuid_123",
+            }
+
+    saved = verify_and_save_qr_credentials(
+        qr_json_text=qr_json,
+        qr_pin="1234",
+        env_path=env_file,
+        qr_login_fn=lambda **kwargs: FakeQRClient(),
+    )
+    assert saved.is_token_auth is True
+    assert saved.token.get_secret_value() == "secret_long_token"
+    assert saved.uuid == "uuid_123"
+    assert "PRONOTE_PASSWORD" not in env_file.read_text(encoding="utf-8")
+
+
+def test_browser_auth_cookies_and_url_helpers():
+    from pronote_mcp.browser_auth import _normalize_pronote_space_url, cookies_to_jar
+
+    jar = cookies_to_jar([{"name": "CASTGC", "value": "xyz", "domain": ".ent.fr", "path": "/"}])
+    assert jar.get("CASTGC") == "xyz"
+    assert _normalize_pronote_space_url("https://demo.pronote.local/pronote/eleve.html?foo=1", "student") == "https://demo.pronote.local/pronote/eleve.html"

@@ -25,6 +25,8 @@ wheels/
 
 # Secrets & Sessions
 .env
+.env.test
+sso_debug.log
 *.pkl
 .session_cache.pkl
 .device_uuid

@@ -202,8 +202,29 @@ class PronoteSessionManager:
         self._clear_cached_session()
         return True
 
+    async def configure_via_browser(
+        self,
+        pronote_url: str,
+        account_type: str = "student",
+        device_name: str = "MCP Assistant",
+    ) -> PronoteSettings:
+        """Open the official Pronote/ENT page directly in a native browser and save a durable token."""
+        from pronote_mcp.browser_auth import authenticate_via_browser
+
+        new_settings = await asyncio.to_thread(
+            authenticate_via_browser,
+            target_url=pronote_url,
+            account_type=account_type,
+            device_name=device_name,
+        )
+        self.settings = new_settings
+        self._active_child_name = new_settings.child_name
+        self._client = None
+        self._clear_cached_session()
+        return new_settings
+
     async def ensure_configured(self) -> PronoteSettings:
-        """Ensure valid PronoteSettings are loaded, opening the secure popup if missing."""
+        """Ensure valid PronoteSettings are loaded, or guide the AI chat to request the Pronote URL."""
         if self.settings is not None:
             return self.settings
         loaded = load_settings_or_none()
@@ -211,13 +232,13 @@ class PronoteSessionManager:
             self.settings = loaded
             self._active_child_name = loaded.child_name
             return loaded
-        configured = await self.configure_via_popup()
-        if not configured or self.settings is None:
-            raise RuntimeError(
-                "Configuration Pronote annulée ou manquante. "
-                "Relancez la configuration ou remplissez le fichier .env localement."
-            )
-        return self.settings
+        raise RuntimeError(
+            "Aucun compte Pronote n'est configuré. "
+            "Expliquez à l'utilisateur qu'il peut se connecter en toute sécurité sans partager son mot de passe dans le chat : "
+            "demandez-lui l'URL de son espace Pronote ou ENT (ex: https://.../pronote/eleve.html) et s'il s'agit d'un compte "
+            "'student' (élève) ou 'parent', puis appelez pronote_setup_account(pronote_url=..., account_type=...) "
+            "pour ouvrir directement la page officielle de connexion."
+        )
 
     async def get_client(self) -> Any:
         """Get or initialize the authenticated Pronote client."""

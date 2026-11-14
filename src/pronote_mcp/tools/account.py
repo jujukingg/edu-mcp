@@ -81,12 +81,32 @@ def register_account_tools(
     @server.tool(
         name="pronote_setup_account",
         description=(
-            "Open a secure local popup window so the user can enter or update Pronote credentials "
-            "directly into the local .env file without sharing secrets in the chat."
+            "Configure or reconnect a Pronote account directly via the official Pronote/ENT login page. "
+            "If pronote_url is empty, returns instructions for the AI to explain the process to the user and ask for their Pronote/ENT URL. "
+            "When pronote_url is provided, opens a native browser directly on that official page so the user logs in (including 2FA) "
+            "without sharing secrets in the chat, then saves a durable token locally."
         ),
     )
-    async def pronote_setup_account() -> str:
-        saved = await session_manager.configure_via_popup()
-        if saved:
-            return "Configuration Pronote enregistrée localement dans .env. Aucun secret n'a transité par le chat."
-        return "Configuration annulée par l'utilisateur."
+    async def pronote_setup_account(
+        pronote_url: str = "",
+        account_type: str = "student",
+        device_name: str = "MCP Assistant",
+    ) -> str:
+        clean_url = pronote_url.strip()
+        if not clean_url:
+            return (
+                "Pour connecter votre compte Pronote, donnez-moi simplement l'URL de votre espace Pronote ou ENT "
+                "(par exemple `https://.../pronote/eleve.html`) et précisez s'il s'agit d'un compte élève (`student`) ou parent (`parent`).\n\n"
+                "Ensuite, j'ouvrirai directement une fenêtre de navigateur officielle sur cette page : "
+                "vous n'aurez qu'à vous connecter normalement (y compris votre code 2FA). "
+                "Votre mot de passe ne passe jamais par le chat, et le jeton de session + le 2FA seront récupérés automatiquement."
+            )
+        saved = await session_manager.configure_via_browser(
+            pronote_url=clean_url,
+            account_type=account_type,
+            device_name=device_name,
+        )
+        return (
+            f"Compte Pronote configuré avec succès pour {saved.url} "
+            f"(type={saved.account_type}). Le jeton durable a été enregistré dans le fichier .env local."
+        )

@@ -20,9 +20,9 @@ if hasattr(pronotepy, "pronoteAPI") and hasattr(pronotepy.pronoteAPI, "HEADERS_M
     pronotepy.pronoteAPI.HEADERS_MOBILE = {
         "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148"
     }
-from pronote_mcp.config import PronoteSettings, load_settings_or_none, resolve_env_path
+from edu_mcp.config import PronoteSettings, load_settings_or_none, resolve_env_path
 
-logger = logging.getLogger("pronote_mcp.client")
+logger = logging.getLogger("edu_mcp.client")
 
 
 class PronoteSessionManager:
@@ -31,6 +31,7 @@ class PronoteSessionManager:
     def __init__(self, settings: Optional[PronoteSettings] = None):
         self.settings: Optional[PronoteSettings] = settings
         self._client: Optional[Any] = None
+        self._provider: Optional[Any] = None
         self._active_child_name: Optional[str] = settings.child_name if settings else None
         self._keep_alive_ctx: Optional[Any] = None
         self._stable_uuid = self._get_or_create_device_uuid()
@@ -183,7 +184,7 @@ class PronoteSessionManager:
                 new_token = client.password
                 if new_token and new_token != token_val:
                     logger.info("Updating rotated Pronote token in configuration")
-                    from pronote_mcp.config import save_env_config
+                    from edu_mcp.config import save_env_config
                     from pydantic import SecretStr
                     try:
                         save_env_config({"PRONOTE_TOKEN": new_token})
@@ -206,7 +207,7 @@ class PronoteSessionManager:
     ) -> PronoteSettings:
         """Open the official Pronote/ENT page directly in a native browser and save a durable token."""
         from pathlib import Path
-        from pronote_mcp.browser_auth import authenticate_via_browser
+        from edu_mcp.browser_auth import authenticate_via_browser
 
         target_env = Path(env_path) if env_path else None
         new_settings = await asyncio.to_thread(
@@ -219,7 +220,65 @@ class PronoteSessionManager:
         self.settings = new_settings
         self._active_child_name = new_settings.child_name
         self._client = None
+        self._provider = None
         return new_settings
+
+    async def get_provider(self) -> Optional[Any]:
+        """Return the active multi-platform provider for ÉcoleDirecte/Skolengo, or None for Pronote."""
+        cfg = await self.ensure_configured()
+        if cfg.platform == "pronote":
+            return None
+        if self._provider is not None and getattr(self._provider, "platform_name", None) == cfg.platform:
+            return self._provider
+        if cfg.platform == "ecoledirecte":
+            from edu_mcp.providers.ecoledirecte_provider import EcoleDirecteProvider
+            self._provider = EcoleDirecteProvider(cfg)
+            return self._provider
+        if cfg.platform == "skolengo":
+            from edu_mcp.providers.skolengo_provider import SkolengoProvider
+            self._provider = SkolengoProvider(cfg)
+            return self._provider
+        return None
+
+    async def configure_ecoledirecte(
+        self,
+        username: str,
+        password: str,
+        mfa_answer: str = "",
+        env_path: Optional[Any] = None,
+    ) -> Dict[str, Any]:
+        """Authenticate with ÉcoleDirecte (including QCM 2FA) and persist configuration."""
+        from pathlib import Path
+        from ecoledirecte_py_client import Client, Family, MFARequiredError
+        from edu_mcp.config import save_env_config
+
+        target_env = Path(env_path) if env_path else None
+        client = Client()
+        try:
+            try:
+                account = await client.login(username, password)
+            except MFARequiredError as mfa_err:
+                if not mfa_answer.strip():
+                    return {"status": "mfa_required", "question": str(mfa_err)}
+                account = await client.submit_mfa(mfa_answer.strip())
+            if isinstance(account, Family):
+                await account.fetch()
+            payload: Dict[str, str] = {
+                "EDU_PLATFORM": "ecoledirecte",
+                "PRONOTE_USERNAME": username,
+                "PRONOTE_PASSWORD": password,
+            }
+            if getattr(account, "cn", None) and getattr(account, "cv", None):
+                payload["EDU_ED_CN"] = str(account.cn)
+                payload["EDU_ED_CV"] = str(account.cv)
+            saved_path = save_env_config(payload, env_path=target_env)
+            new_settings = PronoteSettings(_env_file=str(saved_path))
+            self.settings = new_settings
+            self._client = None
+            self._provider = None
+            return {"status": "ok", "env_file": str(saved_path)}
+        finally:
+            await client.close()
 
     async def ensure_configured(self) -> PronoteSettings:
         """Ensure valid PronoteSettings are loaded, or guide the AI chat to request the Pronote URL."""

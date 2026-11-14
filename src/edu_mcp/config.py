@@ -3,7 +3,7 @@
 import os
 from pathlib import Path
 from typing import Dict, Literal, Optional
-from pydantic import Field, SecretStr, ValidationError, model_validator
+from pydantic import AliasChoices, Field, SecretStr, ValidationError, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 def get_app_data_dir() -> Path:
@@ -11,11 +11,11 @@ def get_app_data_dir() -> Path:
     override = os.environ.get("PRONOTE_MCP_HOME")
     if override:
         return Path(override).expanduser()
-    return Path.home() / ".pronote_mcp"
+    return Path.home() / ".edu_mcp"
 
 
 def resolve_env_path() -> Path:
-    """Resolve the active .env path (explicit override, local project .env, or ~/.pronote_mcp/.env)."""
+    """Resolve the active .env path (explicit override, local project .env, or ~/.edu_mcp/.env)."""
     explicit = os.environ.get("PRONOTE_ENV_FILE")
     if explicit:
         return Path(explicit).expanduser()
@@ -44,10 +44,17 @@ class PronoteSettings(BaseSettings):
         populate_by_name=True,
     )
 
-    # Pronote instance URL
+    # Platform selector (pronote, ecoledirecte, skolengo)
+    platform: Literal["pronote", "ecoledirecte", "skolengo"] = Field(
+        default="pronote",
+        validation_alias=AliasChoices("EDU_PLATFORM", "PRONOTE_PLATFORM"),
+        description="School platform provider: 'pronote', 'ecoledirecte', or 'skolengo'",
+    )
+
+    # Pronote / instance URL (required for Pronote, optional for ÉcoleDirecte/Skolengo)
     url: str = Field(
-        ...,
-        validation_alias="PRONOTE_URL",
+        default="",
+        validation_alias=AliasChoices("PRONOTE_URL", "EDU_URL"),
         description="Full URL to Pronote web space (eleve.html or parent.html)",
     )
 
@@ -111,6 +118,45 @@ class PronoteSettings(BaseSettings):
         description="Path to cache file for persisting active Pronote session across runs",
     )
 
+    # ÉcoleDirecte QCM 2FA device tokens
+    ed_cn: Optional[SecretStr] = Field(
+        default=None,
+        validation_alias="EDU_ED_CN",
+        description="ÉcoleDirecte 2FA trusted device cn token",
+    )
+    ed_cv: Optional[SecretStr] = Field(
+        default=None,
+        validation_alias="EDU_ED_CV",
+        description="ÉcoleDirecte 2FA trusted device cv token",
+    )
+
+    # Skolengo OAuth2 / school metadata
+    skolengo_token: Optional[SecretStr] = Field(
+        default=None,
+        validation_alias="EDU_SKOLENGO_TOKEN",
+        description="Skolengo OAuth2 access token",
+    )
+    skolengo_refresh_token: Optional[SecretStr] = Field(
+        default=None,
+        validation_alias="EDU_SKOLENGO_REFRESH_TOKEN",
+        description="Skolengo OAuth2 refresh token",
+    )
+    skolengo_school_id: Optional[str] = Field(
+        default=None,
+        validation_alias="EDU_SKOLENGO_SCHOOL_ID",
+        description="Skolengo school identifier",
+    )
+    skolengo_ems_code: Optional[str] = Field(
+        default=None,
+        validation_alias="EDU_SKOLENGO_EMS_CODE",
+        description="Skolengo EMS code (e.g. toutatice, monbureaunumerique)",
+    )
+    skolengo_oidc_url: Optional[str] = Field(
+        default=None,
+        validation_alias="EDU_SKOLENGO_OIDC_URL",
+        description="Skolengo OIDC well-known/token endpoint URL",
+    )
+
     # Runtime options
     cache_ttl: int = Field(
         default=180,
@@ -147,7 +193,23 @@ class PronoteSettings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_credentials(self) -> "PronoteSettings":
-        """Ensure either direct credentials or token credentials are provided."""
+        """Ensure required credentials are provided for the configured platform."""
+        if self.platform == "skolengo":
+            if not (self.skolengo_token or self.skolengo_refresh_token):
+                raise ValueError(
+                    "Missing Skolengo credentials. Provide EDU_SKOLENGO_TOKEN or EDU_SKOLENGO_REFRESH_TOKEN."
+                )
+            return self
+
+        if self.platform == "ecoledirecte":
+            if not (self.username and (self.password or self.token)):
+                raise ValueError(
+                    "Missing ÉcoleDirecte credentials. Provide PRONOTE_USERNAME and PRONOTE_PASSWORD (or PRONOTE_TOKEN)."
+                )
+            return self
+
+        if not self.url:
+            raise ValueError("Missing PRONOTE_URL for Pronote platform.")
         has_direct = bool(self.username and self.password)
         has_token = bool(self.token)
 

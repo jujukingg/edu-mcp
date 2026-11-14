@@ -1,6 +1,6 @@
-"""CLI entrypoint for pronote-mcp."""
+"""Backward-compatibility entrypoint for `python -m pronote_mcp`."""
 
-from pronote_mcp.server import main
+from edu_mcp.__main__ import main
 
 if __name__ == "__main__":
     main()

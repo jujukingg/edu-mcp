@@ -3,9 +3,9 @@
 import datetime
 import json
 from mcp.server.fastmcp import FastMCP
-from pronote_mcp.client import PronoteSessionManager
-from pronote_mcp.models import DiscussionDTO, HomeworkDTO, UserProfileDTO
-from pronote_mcp.utils import map_lesson, to_iso
+from edu_mcp.client import PronoteSessionManager
+from edu_mcp.models import DiscussionDTO, HomeworkDTO, UserProfileDTO
+from edu_mcp.utils import map_lesson, to_iso
 
 
 def register_resources(

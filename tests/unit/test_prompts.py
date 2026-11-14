@@ -2,7 +2,7 @@
 
 import pytest
 from mcp.server.fastmcp import FastMCP
-from pronote_mcp.prompts import register_prompts
+from edu_mcp.prompts import register_prompts
 
 
 @pytest.fixture

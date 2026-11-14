@@ -1,7 +1,7 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
-  "name": "io.github.jujukingg/pronote-mcp",
-  "description": "MCP server for Pronote (grades, timetable, homework, absences, school life, ENT/2FA browser login).",
+  "name": "io.github.jujukingg/edu-mcp",
+  "description": "Unified MCP server for French school platforms (Pronote, ÉcoleDirecte, Skolengo, ENT) with browser SSO/2FA.",
   "repository": {
     "url": "https://github.com/jujukingg/pronote-mcp",
     "source": "github"
@@ -10,7 +10,7 @@
   "packages": [
     {
       "registry_type": "pypi",
-      "identifier": "pronote-mcp",
+      "identifier": "edu-mcp",
       "version": "1.0.0",
       "transport": {
         "type": "stdio"

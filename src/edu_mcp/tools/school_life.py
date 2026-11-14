@@ -3,15 +3,15 @@
 import datetime
 from typing import Any, Dict, List, Optional
 from mcp.server.fastmcp import FastMCP
-from pronote_mcp.client import PronoteSessionManager
-from pronote_mcp.models import (
+from edu_mcp.client import PronoteSessionManager
+from edu_mcp.models import (
     AbsenceDTO,
     CanteenMenuDTO,
     DelayDTO,
     NewsItemDTO,
     PunishmentDTO,
 )
-from pronote_mcp.utils import map_attachments
+from edu_mcp.utils import map_attachments
 
 
 def register_school_life_tools(

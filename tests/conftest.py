@@ -3,8 +3,8 @@
 import datetime
 from unittest.mock import MagicMock
 import pytest
-from pronote_mcp.config import PronoteSettings
-from pronote_mcp.client import PronoteSessionManager
+from edu_mcp.config import PronoteSettings
+from edu_mcp.client import PronoteSessionManager
 
 
 class DummySubject:

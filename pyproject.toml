@@ -3,14 +3,14 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "pronote-mcp"
+name = "edu-mcp"
 version = "1.0.0"
-description = "Model Context Protocol (MCP) server for Pronote, enabling AI assistants like Antigravity Gemini and Claude Desktop to interact with Pronote"
+description = "Unified Model Context Protocol (MCP) server for French school platforms (Pronote, ÉcoleDirecte, Skolengo, ENT)."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
-authors = [{ name = "Pronote MCP Contributors" }]
-keywords = ["mcp", "pronote", "education", "assistant", "school"]
+authors = [{ name = "Edu MCP Contributors" }]
+keywords = ["mcp", "pronote", "ecoledirecte", "skolengo", "education", "school"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Education",
@@ -23,6 +23,8 @@ classifiers = [
 dependencies = [
     "mcp>=2.0.0",
     "pronotepy>=2.11.0",
+    "ecoledirecte-py-client>=0.2.1",
+    "httpx>=0.28.0",
     "pydantic>=2.7.0",
     "pydantic-settings>=2.2.0",
     "python-dotenv>=1.0.0",
@@ -40,7 +42,8 @@ dev = [
 ]
 
 [project.scripts]
-pronote-mcp = "pronote_mcp.__main__:main"
+edu-mcp = "edu_mcp.__main__:main"
+pronote-mcp = "edu_mcp.__main__:main"
 
 [project.urls]
 Homepage = "https://github.com/jujukingg/pronote-mcp"
@@ -52,4 +55,4 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
 pythonpath = ["src", "."]
-addopts = "--cov=pronote_mcp --cov-report=term-missing --cov-fail-under=80"
+addopts = "--cov=edu_mcp --cov-report=term-missing --cov-fail-under=80"

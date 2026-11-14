@@ -1,8 +1,8 @@
 """Unit tests for PronoteSessionManager."""
 
 import pytest
-from pronote_mcp.client import PronoteSessionManager
-from pronote_mcp.config import PronoteSettings
+from edu_mcp.client import PronoteSessionManager
+from edu_mcp.config import PronoteSettings
 
 
 @pytest.mark.asyncio

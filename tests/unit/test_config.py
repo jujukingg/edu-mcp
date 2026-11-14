@@ -2,7 +2,7 @@
 
 import pytest
 from pydantic import ValidationError
-from pronote_mcp.config import PronoteSettings
+from edu_mcp.config import PronoteSettings
 
 
 def test_config_valid_password():

@@ -3,9 +3,9 @@
 import datetime
 from typing import Any, Dict, List, Optional
 from mcp.server.fastmcp import FastMCP
-from pronote_mcp.client import PronoteSessionManager
-from pronote_mcp.models import LessonDTO
-from pronote_mcp.utils import map_lesson
+from edu_mcp.client import PronoteSessionManager
+from edu_mcp.models import LessonDTO
+from edu_mcp.utils import map_lesson
 
 
 def register_timetable_tools(

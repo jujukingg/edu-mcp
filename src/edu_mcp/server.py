@@ -17,18 +17,18 @@ if hasattr(pronotepy, "pronoteAPI") and hasattr(pronotepy.pronoteAPI, "HEADERS_M
     }
 
 from mcp.server.fastmcp import FastMCP
-from pronote_mcp.config import PronoteSettings, load_settings_or_none
-from pronote_mcp.client import PronoteSessionManager
-from pronote_mcp.tools import register_all_tools
-from pronote_mcp.resources import register_resources
-from pronote_mcp.prompts import register_prompts
+from edu_mcp.config import PronoteSettings, load_settings_or_none
+from edu_mcp.client import PronoteSessionManager
+from edu_mcp.tools import register_all_tools
+from edu_mcp.resources import register_resources
+from edu_mcp.prompts import register_prompts
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     stream=sys.stderr,
 )
-logger = logging.getLogger("pronote_mcp.server")
+logger = logging.getLogger("edu_mcp.server")
 
 
 def create_server(settings: Optional[PronoteSettings] = None) -> FastMCP:
@@ -39,8 +39,8 @@ def create_server(settings: Optional[PronoteSettings] = None) -> FastMCP:
             logger.info("No valid .env configuration found at startup; secure popup will be used on first request.")
 
     server = FastMCP(
-        name="Pronote MCP",
-        instructions="Antigravity Gemini MCP Server for Pronote integration",
+        name="Edu MCP",
+        instructions="Unified MCP Server for French school platforms (Pronote, ÉcoleDirecte, Skolengo, ENT)",
     )
     session_manager = PronoteSessionManager(settings)
 

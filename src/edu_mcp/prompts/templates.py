@@ -3,7 +3,7 @@
 from typing import List
 from mcp.server.fastmcp import FastMCP
 from mcp.types import PromptMessage, TextContent
-from pronote_mcp.client import PronoteSessionManager
+from edu_mcp.client import PronoteSessionManager
 
 
 def register_prompts(

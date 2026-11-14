@@ -1,6 +1,5 @@
-"""Pronote MCP Server for Antigravity Gemini.
+"""Backward-compatibility shim for `pronote_mcp` -> `edu_mcp`."""
 
-Provides Model Context Protocol access to Pronote student and parent accounts.
-"""
+from edu_mcp import __version__
 
-__version__ = "1.0.0"
+__all__ = ["__version__"]

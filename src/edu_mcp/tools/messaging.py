@@ -3,9 +3,9 @@
 import hashlib
 from typing import Any, Dict, List
 from mcp.server.fastmcp import FastMCP
-from pronote_mcp.client import PronoteSessionManager
-from pronote_mcp.models import DiscussionDTO, MessageDTO
-from pronote_mcp.utils import to_iso
+from edu_mcp.client import PronoteSessionManager
+from edu_mcp.models import DiscussionDTO, MessageDTO
+from edu_mcp.utils import to_iso
 
 
 def _discussion_id(discussion: Any) -> str:

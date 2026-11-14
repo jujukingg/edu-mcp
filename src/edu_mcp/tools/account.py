@@ -2,8 +2,8 @@
 
 from typing import Any, Dict, List
 from mcp.server.fastmcp import FastMCP
-from pronote_mcp.client import PronoteSessionManager
-from pronote_mcp.models import ChildDTO, UserProfileDTO
+from edu_mcp.client import PronoteSessionManager
+from edu_mcp.models import ChildDTO, UserProfileDTO
 
 
 def register_account_tools(

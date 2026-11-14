@@ -16,14 +16,14 @@ from urllib.parse import urlparse
 import uuid as uuid_lib
 
 import requests
-from pronote_mcp.config import PronoteSettings, get_app_data_dir, save_env_config
+from edu_mcp.config import PronoteSettings, get_app_data_dir, save_env_config
 
 _SSO_LOG_FILE = get_app_data_dir() / "sso_debug.log"
 
 
 def get_sso_logger(log_path: Optional[Path] = None) -> logging.Logger:
     """Return a logger writing detailed SSO diagnostics to stderr and sso_debug.log."""
-    logger = logging.getLogger("pronote_mcp.sso")
+    logger = logging.getLogger("edu_mcp.sso")
     logger.setLevel(logging.DEBUG)
     logger.propagate = False
     target_file = (log_path or (get_app_data_dir() / "sso_debug.log")).resolve()
@@ -361,7 +361,7 @@ def authenticate_via_browser(
 
     from playwright.sync_api import sync_playwright
     import pronotepy
-    from pronote_mcp.client import PronoteSessionManager
+    from edu_mcp.client import PronoteSessionManager
 
     result_event = threading.Event()
     result_box: Dict[str, Any] = {}
@@ -525,6 +525,109 @@ def authenticate_via_browser(
     thread.start()
     if not result_event.wait(timeout=timeout_seconds + 15):
         raise TimeoutError("Délai dépassé en attendant l'authentification navigateur.")
+    if "error" in result_box:
+        raise result_box["error"]
+    return result_box["settings"]
+
+
+def authenticate_skolengo_via_browser(
+    school_id: str,
+    ems_code: str,
+    oidc_url: str,
+    env_path: Optional[Path] = None,
+    timeout_seconds: int = 180,
+) -> PronoteSettings:
+    """Authenticate with Skolengo via OAuth2 PKCE in the user's browser and save tokens."""
+    from urllib.parse import parse_qs
+    from edu_mcp.providers.skolengo_provider import (
+        SKOLENGO_CLIENT_ID,
+        SKOLENGO_REDIRECT_URI,
+        build_pkce_pair,
+        build_skolengo_auth_url,
+    )
+
+    log_file = (env_path.parent / "sso_debug.log") if env_path else (get_app_data_dir() / "sso_debug.log")
+    log = get_sso_logger(log_file)
+
+    well_known = requests.get(oidc_url, timeout=15).json()
+    auth_endpoint = well_known["authorization_endpoint"]
+    token_endpoint = well_known["token_endpoint"]
+    verifier, challenge = build_pkce_pair()
+    state = uuid_lib.uuid4().hex
+    auth_url = build_skolengo_auth_url(auth_endpoint, ems_code, challenge, state)
+
+    result_box: Dict[str, Any] = {}
+    result_event = threading.Event()
+
+    def _worker() -> None:
+        try:
+            from playwright.sync_api import sync_playwright
+
+            with sync_playwright() as p:
+                browser, context = _launch_browser_context(p, logger=log)
+                try:
+                    captured_code: Dict[str, str] = {}
+
+                    def _on_request(req: Any) -> None:
+                        if req.url.startswith(SKOLENGO_REDIRECT_URI):
+                            qs = parse_qs(urlparse(req.url).query)
+                            if "code" in qs:
+                                captured_code["code"] = qs["code"][0]
+
+                    context.on("request", _on_request)
+                    page = context.pages[0] if context.pages else context.new_page()
+                    page.goto(auth_url, wait_until="domcontentloaded")
+
+                    elapsed = 0.0
+                    while elapsed < timeout_seconds and "code" not in captured_code:
+                        page.wait_for_timeout(500)
+                        elapsed += 0.5
+                        if page.url.startswith(SKOLENGO_REDIRECT_URI):
+                            qs = parse_qs(urlparse(page.url).query)
+                            if "code" in qs:
+                                captured_code["code"] = qs["code"][0]
+
+                    if "code" not in captured_code:
+                        raise TimeoutError("Connexion Skolengo expirée avant réception du code OAuth2.")
+
+                    tok_resp = requests.post(
+                        token_endpoint,
+                        data={
+                            "grant_type": "authorization_code",
+                            "client_id": SKOLENGO_CLIENT_ID,
+                            "code": captured_code["code"],
+                            "redirect_uri": SKOLENGO_REDIRECT_URI,
+                            "code_verifier": verifier,
+                        },
+                        timeout=15,
+                    )
+                    tok_resp.raise_for_status()
+                    tok = tok_resp.json()
+
+                    payload: Dict[str, str] = {
+                        "EDU_PLATFORM": "skolengo",
+                        "EDU_SKOLENGO_TOKEN": tok["access_token"],
+                        "EDU_SKOLENGO_SCHOOL_ID": school_id,
+                        "EDU_SKOLENGO_EMS_CODE": ems_code,
+                        "EDU_SKOLENGO_OIDC_URL": oidc_url,
+                    }
+                    if tok.get("refresh_token"):
+                        payload["EDU_SKOLENGO_REFRESH_TOKEN"] = tok["refresh_token"]
+
+                    target_env = save_env_config(payload, env_path=env_path)
+                    result_box["settings"] = PronoteSettings(_env_file=str(target_env))
+                    result_event.set()
+                finally:
+                    browser.close()
+        except Exception as exc:
+            if not result_event.is_set():
+                result_box["error"] = exc
+                result_event.set()
+
+    thread = threading.Thread(target=_worker, daemon=True)
+    thread.start()
+    if not result_event.wait(timeout=timeout_seconds + 15):
+        raise TimeoutError("Délai dépassé en attendant l'authentification Skolengo.")
     if "error" in result_box:
         raise result_box["error"]
     return result_box["settings"]

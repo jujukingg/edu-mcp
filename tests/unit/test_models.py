@@ -1,6 +1,6 @@
 """Unit tests for Pydantic models."""
 
-from pronote_mcp.models import (
+from edu_mcp.models import (
     AbsenceDTO,
     CanteenMenuDTO,
     DelayDTO,

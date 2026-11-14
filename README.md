@@ -1,61 +1,123 @@
-<p align="center">
-  <img src="assets/logo.png" alt="Pronote MCP" width="96" />
+<div align="center">
+
+<img src="assets/logo.png" alt="Edu MCP" width="112" />
+
+<h1>Edu MCP</h1>
+
+<p>
+  <strong>The unified Model Context Protocol server for French school platforms.</strong><br />
+  Connect <strong>Pronote (+ ENT)</strong>, <strong>ÉcoleDirecte</strong>, and <strong>Skolengo</strong> to your AI assistant in seconds.
 </p>
 
-<h1 align="center">Pronote MCP</h1>
-
-<p align="center">
-  <strong>🇫🇷 Serveur MCP (Model Context Protocol) pour Pronote (élève & parent)</strong><br />
-  <strong>🇬🇧 Model Context Protocol (MCP) server for Pronote (student & parent spaces)</strong>
+<p>
+  <a href="README.md"><strong>English</strong></a> · <a href="README.fr.md">Français</a>
 </p>
 
-<p align="center">
-  Compatible with <strong>Claude Desktop</strong>, <strong>Cursor</strong>, and <strong>Antigravity</strong> via <code>uvx pronote-mcp</code>.
+<p>
+  <a href="https://github.com/jujukingg/pronote-mcp/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/jujukingg/pronote-mcp/ci.yml?style=flat-square&logo=github&label=CI" alt="CI" /></a>
+  <a href="https://pypi.org/project/edu-mcp/"><img src="https://img.shields.io/badge/PyPI-edu--mcp-3775A9?style=flat-square&logo=pypi&logoColor=white" alt="PyPI" /></a>
+  <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.10+" />
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-16a34a?style=flat-square" alt="MIT License" /></a>
 </p>
+
+</div>
 
 ---
 
-## 🇫🇷 Démarrage rapide / 🇬🇧 Quick Start
+## Supported Platforms
 
-### 1. Installation (1 ligne / 1 line)
+<table>
+  <tr>
+    <td align="center" width="33%">
+      <img src="assets/logos/pronote.svg" alt="Pronote" height="44" /><br /><br />
+      <strong>Pronote (+ ENT)</strong> &nbsp;<img src="https://img.shields.io/badge/Stable-16a34a?style=flat-square" alt="Stable" /><br />
+      <sub>Toutatice, MonBureauNumérique, Île-de-France, Atrium…</sub><br /><br />
+      <code>Browser SSO + 2FA + QR Token</code>
+    </td>
+    <td align="center" width="33%">
+      <img src="assets/logos/ecoledirecte.png" alt="ÉcoleDirecte" height="44" /><br /><br />
+      <strong>ÉcoleDirecte</strong> &nbsp;<img src="https://img.shields.io/badge/Beta-d97706?style=flat-square" alt="Beta" /><br />
+      <sub>Student &amp; Family multi-child spaces</sub><br /><br />
+      <code>Credentials + QCM 2FA</code>
+    </td>
+    <td align="center" width="33%">
+      <img src="assets/logos/skolengo.png" alt="Skolengo" height="44" /><br /><br />
+      <strong>Skolengo</strong> &nbsp;<img src="https://img.shields.io/badge/Beta-d97706?style=flat-square" alt="Beta" /><br />
+      <sub>School search &amp; federated ENT login</sub><br /><br />
+      <code>OAuth2 PKCE Browser</code>
+    </td>
+  </tr>
+</table>
 
-Avec [`uv`](https://docs.astral.sh/uv/) *(recommandé / recommended)* :
+---
 
-```bash
-uvx pronote-mcp
+## How It Works
+
+```mermaid
+flowchart LR
+    AI["AI Assistant<br/>Antigravity · Claude · Cursor · Windsurf"] <-->|MCP stdio| Server["Edu MCP<br/>(uvx edu-mcp)"]
+    Server --> P1["Pronote (+ ENT)"]
+    Server --> P2["ÉcoleDirecte"]
+    Server --> P3["Skolengo"]
+    Server --- Store[("~/.edu_mcp/.env (0600)<br/>Session Cache &amp; Device UUID")]
 ```
 
-Ou via `pip` :
+> [!IMPORTANT]
+> **Privacy & Security by Design**
+> - **Zero-leak login**: Pronote & Skolengo authenticate directly in your native browser — passwords never enter the chat.
+> - **Read-only messaging**: Your AI can read school announcements and discussion threads, never send messages.
+> - **Local-only storage**: Tokens and session caches stay on your machine in `~/.edu_mcp/.env` (`chmod 600`).
 
-```bash
-pip install pronote-mcp
-```
+---
 
-### 2. Configuration client MCP (Claude Desktop, Cursor, Antigravity)
+## Quick Start
 
-Ajoutez ce bloc dans votre fichier de configuration MCP (`claude_desktop_config.json`, `.cursor/mcp.json`, ou `mcp_config.json`) :
+### 1. Add to Your AI Client
+
+Paste this into your MCP configuration file — no cloning or manual Python setup required:
 
 ```json
 {
   "mcpServers": {
-    "pronote": {
+    "edu-mcp": {
       "command": "uvx",
-      "args": ["pronote-mcp"]
+      "args": ["edu-mcp"]
     }
   }
 }
 ```
 
 <details>
-<summary>Alternative depuis un clone local / Local git clone configuration</summary>
+<summary><strong>Where is my MCP config file?</strong> (Antigravity, Claude Desktop, Cursor, Windsurf, VS Code)</summary>
+
+| Client | Configuration Path |
+|---|---|
+| **Antigravity** | `~/.gemini/config/mcp_config.json` |
+| **Claude Desktop (macOS)** | `~/Library/Application Support/Claude/claude_desktop_config.json` |
+| **Claude Desktop (Windows)** | `%APPDATA%\Claude\claude_desktop_config.json` |
+| **Cursor** | `~/.cursor/mcp.json` or `.cursor/mcp.json` |
+| **Windsurf** | `~/.codeium/windsurf/mcp_config.json` |
+| **VS Code (Copilot)** | `.vscode/mcp.json` |
+
+</details>
+
+<details>
+<summary><strong>Alternative:</strong> Run via <code>pip</code> or from a local git clone</summary>
+
+```bash
+pip install edu-mcp
+edu-mcp
+```
+
+Or from a cloned repository:
 
 ```json
 {
   "mcpServers": {
-    "pronote": {
+    "edu-mcp": {
       "command": "python",
-      "args": ["-m", "pronote_mcp"],
-      "cwd": "/chemin/vers/pronote_mcp"
+      "args": ["-m", "edu_mcp"],
+      "cwd": "/path/to/pronote_mcp"
     }
   }
 }
@@ -63,107 +125,86 @@ Ajoutez ce bloc dans votre fichier de configuration MCP (`claude_desktop_config.
 
 </details>
 
-### 3. Connexion guidée dans le chat / Chat-Guided Login
+### 2. Connect in Chat
 
-Une fois le serveur MCP ajouté, demandez simplement à votre assistant :
+Just ask your assistant:
 
-> *"Connecte mon compte Pronote"* / *"Connect my Pronote account"*
+> *"Connect my Pronote / ÉcoleDirecte / Skolengo account"*
 
-1. L'assistant vous explique le fonctionnement et vous demande votre **URL Pronote** (ex. `https://xxx.index-education.net/pronote/eleve.html` ou `parent.html`).
-2. `pronote_setup_account` ouvre automatiquement votre navigateur (Edge / Chrome / Chromium) sur la page officielle de votre établissement.
-3. Vous vous connectez normalement (ENT, identifiant, mot de passe, code PIN 2FA). **Aucun mot de passe ne transite par le chat.**
-4. Le connecteur capture automatiquement le jeton durable (et le PIN 2FA si saisi) et le sauvegarde dans `~/.pronote_mcp/.env` (ou le `.env` local s'il existe).
-
----
-
-## Caractéristiques / Features
-
-- **Connexion SSO / ENT & 2FA automatique** : Ouverture du navigateur système via Playwright, capture automatique du PIN 2FA et conversion en jeton durable (`PRONOTE_TOKEN`).
-- **Compatible `uvx` & multi-clients** : Stockage sécurisé de la configuration, du cache de session (`.session_cache.pkl`) et de l'UUID appareil (`.device_uuid`) dans `~/.pronote_mcp/` (avec priorité au `.env` local si présent).
-- **Session persistante & heartbeat** : Maintien de la session active en tâche de fond pour éviter les alertes de nouvelle connexion.
-- **Certificats système (`truststore`)** : Résout les erreurs SSL sous Windows (antivirus / pare-feu d'entreprise ou scolaire).
-- **Double espace élève / parent** : Prise en charge des comptes élèves et parents avec sélection d'enfant (`pronote_list_children` / `pronote_select_child`).
-- **Messagerie en lecture seule** : Consultation des discussions sans risque d'envoi accidentel par l'IA.
+1. The assistant calls `edu_setup_account` and guides you through the exact flow for your platform.
+2. **Pronote / Skolengo**: your browser opens on the official login page; sign in normally (ENT + 2FA) and your durable token is captured automatically.
+3. **ÉcoleDirecte**: sign in once with QCM 2FA verification; trusted device tokens (`cn`/`cv`) are saved for future sessions.
 
 ---
 
-## Outils disponibles / Available Tools
+## Capabilities
 
-| Outil / Tool | Description |
+| Category | What Your Assistant Can Do |
 |---|---|
-| `pronote_setup_account` | Lance la connexion guidée par navigateur officiel (ENT/SSO/2FA) et enregistre un jeton durable sans exposer vos identifiants dans le chat. |
-| `pronote_get_user_info` | Récupère les données du compte actif (nom, classe, établissement). |
-| `pronote_get_timetable` | Liste l'emploi du temps et le contenu pédagogique des séances pour une période donnée. |
-| `pronote_get_homework` | Liste le cahier de texte et les devoirs à rendre. |
-| `pronote_set_homework_done` | Marque un devoir comme effectué ou à faire. |
-| `pronote_get_grades` | Retourne les évaluations et notes individuelles par période. |
-| `pronote_get_averages` | Retourne les moyennes de l'élève et de la classe par matière. |
-| `pronote_get_evaluations` | Liste les évaluations par compétences et niveaux d'acquisition. |
-| `pronote_get_report` | Récupère les appréciations générales et par matière du bulletin. |
-| `pronote_get_teaching_staff` | Liste l'équipe pédagogique et les matières associées. |
-| `pronote_get_absences` | Liste les absences, retards et punitions. |
-| `pronote_get_canteen_menu` | Affiche les menus de la cantine par catégorie de plat. |
-| `pronote_get_news` | Liste les communications, pièces jointes et sondages de l'établissement. |
-| `pronote_get_discussions` | Liste les fils de discussion de la messagerie (lecture seule). |
-| `pronote_get_discussion_messages` | Lit les messages d'un fil de discussion (lecture seule). |
-| `pronote_download_attachment` | Télécharge une pièce jointe (devoir, séance ou actualité) dans le dossier local configuré. |
-| `pronote_export_ical` | Exporte l'emploi du temps au format iCalendar (`.ics`). |
-| `pronote_export_timetable_pdf` | Génère et sauvegarde l'emploi du temps hebdomadaire au format PDF. |
-| `pronote_simulate_grade` | Simule l'impact d'une note hypothétique sur la moyenne de matière et générale. |
-| `pronote_analyze_progression` | Compare les moyennes entre deux périodes et face aux moyennes de classe. |
-| `pronote_weekly_radar` | Agrège devoirs urgents, cours annulés/modifiés, contrôles et messages non lus. |
-| `pronote_list_children` | Liste les enfants rattachés à un compte parent. |
-| `pronote_select_child` | Sélectionne l'enfant ciblé pour les requêtes suivantes. |
-| `pronote_list_ents` | Liste les fournisseurs ENT compatibles. |
+| **Schedule** | Fetch daily/weekly timetables, room changes, cancellations, and lesson content; export `.ics` or `.pdf`. |
+| **Homework** | List upcoming assignments with attachments and mark homework as done/pending. |
+| **Grades & Analytics** | Read grades, subject & class averages, skill evaluations, report cards, simulate grades, and track progression. |
+| **School Life** | Check absences, delays, punishments, canteen menus, and school news. |
+| **Messaging** | Read unread threads and announcements *(strictly read-only)*. |
+| **Parent Mode** | List linked children and switch active child seamlessly. |
 
----
+<details>
+<summary><strong>Full MCP Tool, Resource &amp; Prompt Reference</strong> (25+ tools)</summary>
 
-## Ressources et Prompts / Resources & Prompts
+### Unified Multi-Platform Tools (`edu_*`)
 
-### Ressources
-- `pronote://student/profile` : Profil et métadonnées de scolarité (JSON).
-- `pronote://timetable/today` : Emploi du temps et contenus de séance du jour (JSON).
-- `pronote://homework/pending` : Devoirs non effectués à échéance de 14 jours (JSON).
-- `pronote://grades/overview` : Synthèse globale des moyennes de périodes (JSON).
-- `pronote://messages/unread` : Fils de discussion non lus en lecture seule (JSON).
-- `pronote://academics/weekly-radar` : Synthèse hebdomadaire devoirs et alertes d'emploi du temps (JSON).
+| Tool | Description |
+|---|---|
+| `edu_list_platforms` | List supported platforms and search Skolengo schools. |
+| `edu_setup_account` | Chat-guided setup for Pronote, ÉcoleDirecte, or Skolengo. |
+| `edu_get_user_info` | Active user profile (name, class, school, account type). |
+| `edu_get_timetable` | Timetable lessons for a date range. |
+| `edu_get_homework` / `edu_set_homework_done` | Homework list and completion toggle. |
+| `edu_get_grades` / `edu_get_averages` | Individual grades and subject/class averages. |
+| `edu_get_absences` | Absences, delays, and punishments. |
+| `edu_get_news` | School announcements and news items. |
+| `edu_get_discussions` / `edu_get_discussion_messages` | Read-only messaging threads and messages. |
+| `edu_list_children` / `edu_select_child` | Multi-child switching for parent accounts. |
 
-### Prompts
-- `pronote_daily_briefing` : Synthèse matinale (cours, devoirs du jour, messages non lus, repas et actualités).
-- `pronote_homework_planner` : Organisation et priorisation des révisions.
-- `pronote_period_review` : Bilan complet de période (progression, compétences, bulletin et assiduité).
+> **Pronote-specific & Analytics tools** (`pronote_weekly_radar`, `pronote_simulate_grade`, `pronote_analyze_progression`, `pronote_get_evaluations`, `pronote_get_report`, `pronote_get_canteen_menu`, `pronote_export_ical`, `pronote_export_timetable_pdf`, `pronote_download_attachment`) are also registered.
 
----
+### Resources & Prompts
 
-## Variables d'environnement / Environment Variables
+- **Resources**: `pronote://student/profile`, `pronote://timetable/today`, `pronote://homework/pending`, `pronote://grades/overview`, `pronote://messages/unread`, `pronote://academics/weekly-radar`
+- **Prompts**: `pronote_daily_briefing`, `pronote_homework_planner`, `pronote_period_review`
 
-Par défaut, la configuration est stockée dans `~/.pronote_mcp/.env` (ou `./.env` en développement local).
+</details>
+
+<details>
+<summary><strong>Environment Variables</strong> (resolved from <code>PRONOTE_ENV_FILE</code>, <code>~/.edu_mcp/.env</code>, or local <code>.env</code>)</summary>
 
 | Variable | Description |
 |---|---|
-| `PRONOTE_MCP_HOME` | Dossier racine personnalisé pour `.env`, cache et logs (défaut : `~/.pronote_mcp`). |
-| `PRONOTE_ENV_FILE` | Chemin explicite vers un fichier `.env` spécifique. |
-| `PRONOTE_URL` | URL complète de l'espace Pronote (`eleve.html` ou `parent.html`). |
-| `PRONOTE_USERNAME` | Identifiant de connexion ou jeton. |
-| `PRONOTE_TOKEN` | Jeton durable généré automatiquement lors de la connexion navigateur/QR. |
-| `PRONOTE_UUID` | Identifiant unique d'appareil associé au jeton. |
-| `PRONOTE_ACCOUNT_PIN` | Code PIN à 4 chiffres (2FA). |
-| `PRONOTE_DEVICE_NAME` | Nom d'appareil affiché dans Pronote (défaut : `MCP Assistant`). |
-| `PRONOTE_ACCOUNT_TYPE` | Type de compte : `student` ou `parent`. |
-| `PRONOTE_SESSION_FILE` | Emplacement du cache de session (défaut : `~/.pronote_mcp/.session_cache.pkl`). |
-| `PRONOTE_DOWNLOAD_DIR` | Dossier local des pièces jointes et exports (défaut : `./downloads`). |
+| `EDU_PLATFORM` | Active platform: `pronote`, `ecoledirecte`, or `skolengo`. |
+| `PRONOTE_MCP_HOME` | Custom directory for `.env`, session cache, and logs (default: `~/.edu_mcp`). |
+| `PRONOTE_ENV_FILE` | Explicit path to a `.env` file. |
+| `PRONOTE_URL` | Full Pronote web space URL (`eleve.html` or `parent.html`). |
+| `PRONOTE_USERNAME` / `PRONOTE_TOKEN` | Username and durable token (auto-generated). |
+| `PRONOTE_ACCOUNT_PIN` | Optional 4-digit 2FA PIN. |
+| `EDU_ED_CN` / `EDU_ED_CV` | ÉcoleDirecte trusted 2FA device tokens. |
+| `EDU_SKOLENGO_TOKEN` / `EDU_SKOLENGO_REFRESH_TOKEN` | Skolengo OAuth2 tokens. |
+| `PRONOTE_DOWNLOAD_DIR` | Directory for downloaded attachments and exports (default: `./downloads`). |
+
+</details>
 
 ---
 
-## Tests
+## Development
 
 ```bash
+git clone https://github.com/jujukingg/pronote-mcp.git
+cd pronote-mcp
 pip install -e ".[dev]"
 pytest tests/unit -v
 ```
 
 ---
 
-## Licence / License
-
-MIT — voir [LICENSE](LICENSE).
+<p align="center">
+  Released under the <a href="LICENSE">MIT License</a>.
+</p>

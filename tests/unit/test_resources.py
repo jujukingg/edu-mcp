@@ -2,7 +2,7 @@
 
 import pytest
 from mcp.server.fastmcp import FastMCP
-from pronote_mcp.resources import register_resources
+from edu_mcp.resources import register_resources
 
 
 @pytest.fixture

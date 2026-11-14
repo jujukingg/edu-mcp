@@ -6,14 +6,14 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock
 import pytest
 from mcp.server.fastmcp import FastMCP
-from pronote_mcp.config import PronoteSettings, load_settings_or_none, save_env_config
-from pronote_mcp.client import PronoteSessionManager
-from pronote_mcp.prompts import register_prompts
-from pronote_mcp.resources import register_resources
-from pronote_mcp.server import create_server
-from pronote_mcp.tools import register_all_tools
-from pronote_mcp.tools.files import safe_save_path
-from pronote_mcp.utils import parse_fr_float
+from edu_mcp.config import PronoteSettings, load_settings_or_none, save_env_config
+from edu_mcp.client import PronoteSessionManager
+from edu_mcp.prompts import register_prompts
+from edu_mcp.resources import register_resources
+from edu_mcp.server import create_server
+from edu_mcp.tools import register_all_tools
+from edu_mcp.tools.files import safe_save_path
+from edu_mcp.utils import parse_fr_float
 
 
 def _extract_json(result):
@@ -335,13 +335,13 @@ def test_save_env_config_and_lazy_settings(tmp_path):
 
 @pytest.mark.asyncio
 async def test_unconfigured_server_guides_chat_setup(monkeypatch, tmp_path):
-    monkeypatch.setattr("pronote_mcp.server.load_settings_or_none", lambda: None)
+    monkeypatch.setattr("edu_mcp.server.load_settings_or_none", lambda: None)
     server = create_server()
     tools = await server.list_tools()
     assert "pronote_setup_account" in {t.name for t in tools}
 
     mgr = PronoteSessionManager(None)
-    monkeypatch.setattr("pronote_mcp.client.load_settings_or_none", lambda: None)
+    monkeypatch.setattr("edu_mcp.client.load_settings_or_none", lambda: None)
     with pytest.raises(RuntimeError, match="pronote_setup_account"):
         await mgr.ensure_configured()
 
@@ -351,7 +351,7 @@ async def test_unconfigured_server_guides_chat_setup(monkeypatch, tmp_path):
         password="pwd",
     )
     monkeypatch.setattr(
-        "pronote_mcp.browser_auth.authenticate_via_browser",
+        "edu_mcp.browser_auth.authenticate_via_browser",
         lambda **kwargs: new_settings,
     )
     resolved = await mgr.configure_via_browser(
@@ -362,7 +362,7 @@ async def test_unconfigured_server_guides_chat_setup(monkeypatch, tmp_path):
 
 
 def test_resolve_env_path_and_app_data_dir(tmp_path, monkeypatch):
-    from pronote_mcp.config import get_app_data_dir, resolve_env_path
+    from edu_mcp.config import get_app_data_dir, resolve_env_path
 
     home_dir = tmp_path / "custom_home"
     monkeypatch.setenv("PRONOTE_MCP_HOME", str(home_dir))
@@ -386,7 +386,7 @@ def test_resolve_env_path_and_app_data_dir(tmp_path, monkeypatch):
 
 
 def test_browser_auth_cookies_and_url_helpers():
-    from pronote_mcp.browser_auth import _normalize_pronote_space_url, cookies_to_jar
+    from edu_mcp.browser_auth import _normalize_pronote_space_url, cookies_to_jar
 
     jar = cookies_to_jar([{"name": "CASTGC", "value": "xyz", "domain": ".ent.fr", "path": "/"}])
     assert jar.get("CASTGC") == "xyz"

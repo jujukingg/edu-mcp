@@ -11,9 +11,9 @@ try:
 except Exception:
     pass
 
-from pronote_mcp.config import PronoteSettings
-from pronote_mcp.client import PronoteSessionManager
-from pronote_mcp.server import create_server
+from edu_mcp.config import PronoteSettings
+from edu_mcp.client import PronoteSessionManager
+from edu_mcp.server import create_server
 
 
 async def main():

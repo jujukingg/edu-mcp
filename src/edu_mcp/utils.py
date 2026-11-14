@@ -2,7 +2,7 @@
 
 import re
 from typing import Any, Iterable, List, Optional
-from pronote_mcp.models import AttachmentDTO, LessonContentDTO, LessonDTO
+from edu_mcp.models import AttachmentDTO, LessonContentDTO, LessonDTO
 
 
 def to_iso(value: Any, default: str = "") -> str:

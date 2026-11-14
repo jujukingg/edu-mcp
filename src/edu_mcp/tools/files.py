@@ -5,8 +5,8 @@ import re
 from pathlib import Path
 from typing import Any, Dict, Iterable, Literal, Optional
 from mcp.server.fastmcp import FastMCP
-from pronote_mcp.client import PronoteSessionManager
-from pronote_mcp.models import DownloadedFileDTO
+from edu_mcp.client import PronoteSessionManager
+from edu_mcp.models import DownloadedFileDTO
 
 
 _UNSAFE_CHARS_RE = re.compile(r'[<>:"/\\|?*\x00-\x1f]')

@@ -3,8 +3,8 @@
 import datetime
 from typing import Any, Dict, List, Optional
 from mcp.server.fastmcp import FastMCP
-from pronote_mcp.client import PronoteSessionManager
-from pronote_mcp.models import (
+from edu_mcp.client import PronoteSessionManager
+from edu_mcp.models import (
     GradeSimulationDTO,
     HomeworkDTO,
     HomeworkFileDTO,
@@ -13,7 +13,7 @@ from pronote_mcp.models import (
     SubjectProgressionDTO,
     WeeklyRadarDTO,
 )
-from pronote_mcp.utils import map_lesson, parse_fr_float, to_iso
+from edu_mcp.utils import map_lesson, parse_fr_float, to_iso
 
 
 def _select_period(target: Any, period_name: Optional[str] = None) -> Any:

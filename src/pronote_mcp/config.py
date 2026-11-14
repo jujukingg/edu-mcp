@@ -6,14 +6,39 @@ from typing import Dict, Literal, Optional
 from pydantic import Field, SecretStr, ValidationError, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-_ENV_PATH = Path(__file__).resolve().parents[2] / ".env"
+def get_app_data_dir() -> Path:
+    """Return the user-scoped directory for pronote-mcp config, cache, and logs."""
+    override = os.environ.get("PRONOTE_MCP_HOME")
+    if override:
+        return Path(override).expanduser()
+    return Path.home() / ".pronote_mcp"
+
+
+def resolve_env_path() -> Path:
+    """Resolve the active .env path (explicit override, local project .env, or ~/.pronote_mcp/.env)."""
+    explicit = os.environ.get("PRONOTE_ENV_FILE")
+    if explicit:
+        return Path(explicit).expanduser()
+    home_override = os.environ.get("PRONOTE_MCP_HOME")
+    if home_override:
+        return Path(home_override).expanduser() / ".env"
+    cwd_env = Path.cwd() / ".env"
+    if cwd_env.exists():
+        return cwd_env
+    pkg_root = Path(__file__).resolve().parents[2]
+    if (pkg_root / "pyproject.toml").exists() and (pkg_root / ".env").exists():
+        return pkg_root / ".env"
+    return get_app_data_dir() / ".env"
+
+
+_ENV_PATH = resolve_env_path()
 
 
 class PronoteSettings(BaseSettings):
     """Pydantic Settings for Pronote authentication and runtime parameters."""
 
     model_config = SettingsConfigDict(
-        env_file=str(_ENV_PATH) if _ENV_PATH.exists() else ".env",
+        env_file=str(resolve_env_path()),
         env_file_encoding="utf-8",
         extra="ignore",
         populate_by_name=True,
@@ -81,7 +106,7 @@ class PronoteSettings(BaseSettings):
         description="Name of the registered device in Pronote",
     )
     session_file: Optional[str] = Field(
-        default=".session_cache.pkl",
+        default_factory=lambda: str(resolve_env_path().parent / ".session_cache.pkl"),
         validation_alias="PRONOTE_SESSION_FILE",
         description="Path to cache file for persisting active Pronote session across runs",
     )
@@ -150,8 +175,8 @@ def _sanitize_env_value(value: str) -> str:
 
 
 def save_env_config(values: Dict[str, str], env_path: Optional[Path] = None) -> Path:
-    """Write or update Pronote keys in the local .env file securely."""
-    target_env = env_path or _ENV_PATH
+    """Write or update Pronote keys in the active .env file securely."""
+    target_env = env_path or resolve_env_path()
     existing_lines: list[str] = []
     if target_env.exists():
         existing_lines = target_env.read_text(encoding="utf-8").splitlines()

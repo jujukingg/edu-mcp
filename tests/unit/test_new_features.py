@@ -361,76 +361,28 @@ async def test_unconfigured_server_guides_chat_setup(monkeypatch, tmp_path):
     assert resolved.username == "bob"
 
 
-def test_setup_validation_and_live_verification(tmp_path):
-    from pronote_mcp.setup_ui import validate_setup_inputs, verify_and_save_credentials
+def test_resolve_env_path_and_app_data_dir(tmp_path, monkeypatch):
+    from pronote_mcp.config import get_app_data_dir, resolve_env_path
 
-    assert validate_setup_inputs("", "u", "p") is not None
-    assert validate_setup_inputs("not-a-url", "u", "p") is not None
-    assert validate_setup_inputs("https://demo.pronote.local/eleve.html", "u", "p", "12a4") is not None
-    assert validate_setup_inputs("https://demo.pronote.local/eleve.html", "u", "p", "1234") is None
+    home_dir = tmp_path / "custom_home"
+    monkeypatch.setenv("PRONOTE_MCP_HOME", str(home_dir))
+    monkeypatch.delenv("PRONOTE_ENV_FILE", raising=False)
+    monkeypatch.chdir(tmp_path)
 
-    env_file = tmp_path / ".env"
-    payload = {
-        "PRONOTE_URL": "https://demo.pronote.local/eleve.html",
-        "PRONOTE_USERNAME": "alice",
-        "PRONOTE_PASSWORD": "bad",
-    }
+    assert get_app_data_dir() == home_dir
+    # PRONOTE_MCP_HOME routes config to custom home dir
+    assert resolve_env_path() == home_dir / ".env"
 
-    class FailingConnector:
-        def _connect_sync(self):
-            raise ConnectionError("Identifiants invalides")
+    # Without PRONOTE_MCP_HOME, local CWD .env takes priority
+    monkeypatch.delenv("PRONOTE_MCP_HOME", raising=False)
+    local_env = tmp_path / ".env"
+    local_env.write_text("PRONOTE_URL=https://example.local/eleve.html\n", encoding="utf-8")
+    assert resolve_env_path() == local_env
 
-    with pytest.raises(ConnectionError):
-        verify_and_save_credentials(payload, env_path=env_file, connector_factory=lambda _: FailingConnector())
-    assert not env_file.exists()
-
-    class OkConnector:
-        def __init__(self):
-            self.called = False
-
-        def _connect_sync(self):
-            self.called = True
-            return object()
-
-    connector = OkConnector()
-    saved = verify_and_save_credentials(payload, env_path=env_file, connector_factory=lambda _: connector)
-    assert connector.called is True
-    assert env_file.exists()
-    assert saved.username == "alice"
-
-
-def test_qr_setup_validation_and_token_persistence(tmp_path):
-    from pronote_mcp.setup_ui import validate_qr_inputs, verify_and_save_qr_credentials
-
-    assert validate_qr_inputs("not-json", "1234") is not None
-    assert validate_qr_inputs('{"login": "a"}', "1234") is not None
-    assert validate_qr_inputs('{"login": "a", "jeton": "t", "url": "https://x"}', "12") is not None
-    assert validate_qr_inputs('{"login": "a", "jeton": "t", "url": "https://x"}', "1234") is None
-
-    env_file = tmp_path / ".env"
-    qr_json = '{"login": "alice", "jeton": "abc", "url": "https://demo.pronote.local/eleve.html"}'
-
-    class FakeQRClient:
-        logged_in = True
-
-        def export_credentials(self):
-            return {
-                "url": "https://demo.pronote.local/eleve.html",
-                "username": "alice_tok",
-                "password": "secret_long_token",
-                "uuid": "uuid_123",
-            }
-
-    saved = verify_and_save_qr_credentials(
-        qr_json_text=qr_json,
-        qr_pin="1234",
-        env_path=env_file,
-        qr_login_fn=lambda **kwargs: FakeQRClient(),
-    )
-    assert saved.is_token_auth is True
-    assert saved.token.get_secret_value() == "secret_long_token"
-    assert saved.uuid == "uuid_123"
-    assert "PRONOTE_PASSWORD" not in env_file.read_text(encoding="utf-8")
+    # Explicit PRONOTE_ENV_FILE overrides everything
+    explicit_env = tmp_path / "explicit.env"
+    monkeypatch.setenv("PRONOTE_ENV_FILE", str(explicit_env))
+    assert resolve_env_path() == explicit_env
 
 
 def test_browser_auth_cookies_and_url_helpers():

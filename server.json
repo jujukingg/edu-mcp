@@ -1,0 +1,20 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
+  "name": "io.github.jujukingg/pronote-mcp",
+  "description": "MCP server for Pronote (grades, timetable, homework, absences, school life, ENT/2FA browser login).",
+  "repository": {
+    "url": "https://github.com/jujukingg/pronote-mcp",
+    "source": "github"
+  },
+  "version": "1.0.0",
+  "packages": [
+    {
+      "registry_type": "pypi",
+      "identifier": "pronote-mcp",
+      "version": "1.0.0",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

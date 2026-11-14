@@ -5,27 +5,93 @@
 <h1 align="center">Pronote MCP</h1>
 
 <p align="center">
-  Serveur Model Context Protocol (MCP) pour la consultation et l'interaction avec les espaces Pronote (élève et parent).
+  <strong>🇫🇷 Serveur MCP (Model Context Protocol) pour Pronote (élève & parent)</strong><br />
+  <strong>🇬🇧 Model Context Protocol (MCP) server for Pronote (student & parent spaces)</strong>
 </p>
 
-Le serveur s'appuie sur `FastMCP`, `pronotepy` et `pydantic` pour exposer les données scolaires sous forme d'outils, de ressources et de modèles de prompts standardisés.
+<p align="center">
+  Compatible with <strong>Claude Desktop</strong>, <strong>Cursor</strong>, and <strong>Antigravity</strong> via <code>uvx pronote-mcp</code>.
+</p>
 
 ---
 
-## Caractéristiques techniques
+## 🇫🇷 Démarrage rapide / 🇬🇧 Quick Start
 
-- **Gestion de session persistante** : Sauvegarde locale de l'état d'authentification (`.session_cache.pkl`) et identifiant matériel fixe (`.device_uuid`) afin d'éviter les alertes de sécurité répétées lors des reconnexions.
-- **Heartbeat en tâche de fond** : Maintien de la session active via un thread démon pour les requêtes espacées dans le temps.
-- **Prise en charge des certificats système** : Intégration de `truststore` pour résoudre les erreurs de validation SSL sur les environnements Windows protégés par antivirus ou pare-feu applicatif.
-- **Double espace élève / parent** : Prise en charge des comptes élèves ainsi que des comptes parents avec sélection d'enfant.
-- **Typage strict** : Validation de toutes les entrées et sorties via des modèles Pydantic immuables.
+### 1. Installation (1 ligne / 1 line)
+
+Avec [`uv`](https://docs.astral.sh/uv/) *(recommandé / recommended)* :
+
+```bash
+uvx pronote-mcp
+```
+
+Ou via `pip` :
+
+```bash
+pip install pronote-mcp
+```
+
+### 2. Configuration client MCP (Claude Desktop, Cursor, Antigravity)
+
+Ajoutez ce bloc dans votre fichier de configuration MCP (`claude_desktop_config.json`, `.cursor/mcp.json`, ou `mcp_config.json`) :
+
+```json
+{
+  "mcpServers": {
+    "pronote": {
+      "command": "uvx",
+      "args": ["pronote-mcp"]
+    }
+  }
+}
+```
+
+<details>
+<summary>Alternative depuis un clone local / Local git clone configuration</summary>
+
+```json
+{
+  "mcpServers": {
+    "pronote": {
+      "command": "python",
+      "args": ["-m", "pronote_mcp"],
+      "cwd": "/chemin/vers/pronote_mcp"
+    }
+  }
+}
+```
+
+</details>
+
+### 3. Connexion guidée dans le chat / Chat-Guided Login
+
+Une fois le serveur MCP ajouté, demandez simplement à votre assistant :
+
+> *"Connecte mon compte Pronote"* / *"Connect my Pronote account"*
+
+1. L'assistant vous explique le fonctionnement et vous demande votre **URL Pronote** (ex. `https://xxx.index-education.net/pronote/eleve.html` ou `parent.html`).
+2. `pronote_setup_account` ouvre automatiquement votre navigateur (Edge / Chrome / Chromium) sur la page officielle de votre établissement.
+3. Vous vous connectez normalement (ENT, identifiant, mot de passe, code PIN 2FA). **Aucun mot de passe ne transite par le chat.**
+4. Le connecteur capture automatiquement le jeton durable (et le PIN 2FA si saisi) et le sauvegarde dans `~/.pronote_mcp/.env` (ou le `.env` local s'il existe).
 
 ---
 
-## Outils disponibles
+## Caractéristiques / Features
 
-| Outil | Description |
+- **Connexion SSO / ENT & 2FA automatique** : Ouverture du navigateur système via Playwright, capture automatique du PIN 2FA et conversion en jeton durable (`PRONOTE_TOKEN`).
+- **Compatible `uvx` & multi-clients** : Stockage sécurisé de la configuration, du cache de session (`.session_cache.pkl`) et de l'UUID appareil (`.device_uuid`) dans `~/.pronote_mcp/` (avec priorité au `.env` local si présent).
+- **Session persistante & heartbeat** : Maintien de la session active en tâche de fond pour éviter les alertes de nouvelle connexion.
+- **Certificats système (`truststore`)** : Résout les erreurs SSL sous Windows (antivirus / pare-feu d'entreprise ou scolaire).
+- **Double espace élève / parent** : Prise en charge des comptes élèves et parents avec sélection d'enfant (`pronote_list_children` / `pronote_select_child`).
+- **Messagerie en lecture seule** : Consultation des discussions sans risque d'envoi accidentel par l'IA.
+
+---
+
+## Outils disponibles / Available Tools
+
+| Outil / Tool | Description |
 |---|---|
+| `pronote_setup_account` | Lance la connexion guidée par navigateur officiel (ENT/SSO/2FA) et enregistre un jeton durable sans exposer vos identifiants dans le chat. |
 | `pronote_get_user_info` | Récupère les données du compte actif (nom, classe, établissement). |
 | `pronote_get_timetable` | Liste l'emploi du temps et le contenu pédagogique des séances pour une période donnée. |
 | `pronote_get_homework` | Liste le cahier de texte et les devoirs à rendre. |
@@ -49,14 +115,12 @@ Le serveur s'appuie sur `FastMCP`, `pronotepy` et `pydantic` pour exposer les do
 | `pronote_list_children` | Liste les enfants rattachés à un compte parent. |
 | `pronote_select_child` | Sélectionne l'enfant ciblé pour les requêtes suivantes. |
 | `pronote_list_ents` | Liste les fournisseurs ENT compatibles. |
-| `pronote_setup_account` | Ouvre une fenêtre locale sécurisée pour configurer `.env` sans exposer les identifiants dans le chat. |
 
 ---
 
-## Ressources et Prompts
+## Ressources et Prompts / Resources & Prompts
 
 ### Ressources
-
 - `pronote://student/profile` : Profil et métadonnées de scolarité (JSON).
 - `pronote://timetable/today` : Emploi du temps et contenus de séance du jour (JSON).
 - `pronote://homework/pending` : Devoirs non effectués à échéance de 14 jours (JSON).
@@ -65,67 +129,41 @@ Le serveur s'appuie sur `FastMCP`, `pronotepy` et `pydantic` pour exposer les do
 - `pronote://academics/weekly-radar` : Synthèse hebdomadaire devoirs et alertes d'emploi du temps (JSON).
 
 ### Prompts
-
-- `pronote_daily_briefing` : Modèle de synthèse matinale (cours, devoirs du jour, messages non lus, repas et actualités).
-- `pronote_homework_planner` : Modèle d'organisation et de priorisation des révisions.
+- `pronote_daily_briefing` : Synthèse matinale (cours, devoirs du jour, messages non lus, repas et actualités).
+- `pronote_homework_planner` : Organisation et priorisation des révisions.
 - `pronote_period_review` : Bilan complet de période (progression, compétences, bulletin et assiduité).
 
 ---
 
-## Configuration
+## Variables d'environnement / Environment Variables
 
-Copier le fichier d'exemple pour définir vos variables locales :
-
-```bash
-cp .env.example .env
-```
-
-### Variables principales
+Par défaut, la configuration est stockée dans `~/.pronote_mcp/.env` (ou `./.env` en développement local).
 
 | Variable | Description |
 |---|---|
-| `PRONOTE_URL` | URL complète de l'espace Pronote (ex. `https://demo.pronote.index-education.net/pronote/eleve.html`). |
-| `PRONOTE_USERNAME` | Identifiant de connexion direct ou ENT. |
-| `PRONOTE_PASSWORD` | Mot de passe associé. |
-| `PRONOTE_ENT` | Identifiant du connecteur ENT (optionnel, ex. `monbureaunumerique`, `ile_de_france`). |
-| `PRONOTE_ACCOUNT_PIN` | Code PIN à 4 chiffres en cas de double authentification. |
+| `PRONOTE_MCP_HOME` | Dossier racine personnalisé pour `.env`, cache et logs (défaut : `~/.pronote_mcp`). |
+| `PRONOTE_ENV_FILE` | Chemin explicite vers un fichier `.env` spécifique. |
+| `PRONOTE_URL` | URL complète de l'espace Pronote (`eleve.html` ou `parent.html`). |
+| `PRONOTE_USERNAME` | Identifiant de connexion ou jeton. |
+| `PRONOTE_TOKEN` | Jeton durable généré automatiquement lors de la connexion navigateur/QR. |
+| `PRONOTE_UUID` | Identifiant unique d'appareil associé au jeton. |
+| `PRONOTE_ACCOUNT_PIN` | Code PIN à 4 chiffres (2FA). |
 | `PRONOTE_DEVICE_NAME` | Nom d'appareil affiché dans Pronote (défaut : `MCP Assistant`). |
 | `PRONOTE_ACCOUNT_TYPE` | Type de compte : `student` ou `parent`. |
-| `PRONOTE_SESSION_FILE` | Emplacement du cache de session local (défaut : `.session_cache.pkl`). |
-| `PRONOTE_DOWNLOAD_DIR` | Dossier local de sauvegarde des pièces jointes et exports (défaut : `./downloads`). |
-
----
-
-## Intégration client MCP
-
-Exemple de bloc de configuration pour `mcp_config.json` ou `claude_desktop_config.json` :
-
-```json
-{
-  "mcpServers": {
-    "pronote": {
-      "command": "python",
-      "args": ["-m", "pronote_mcp"],
-      "cwd": "/chemin/vers/pronote_mcp"
-    }
-  }
-}
-```
-
-*Sous Windows, remplacer le chemin par le dossier absolu correspondant, par exemple `"C:\\projets\\pronote_mcp"`.*
+| `PRONOTE_SESSION_FILE` | Emplacement du cache de session (défaut : `~/.pronote_mcp/.session_cache.pkl`). |
+| `PRONOTE_DOWNLOAD_DIR` | Dossier local des pièces jointes et exports (défaut : `./downloads`). |
 
 ---
 
 ## Tests
 
-Pour exécuter les tests unitaires :
-
 ```bash
-pytest -v
+pip install -e ".[dev]"
+pytest tests/unit -v
 ```
 
 ---
 
-## Licence
+## Licence / License
 
-Ce projet est distribué sous licence MIT.
+MIT — voir [LICENSE](LICENSE).

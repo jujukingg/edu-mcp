@@ -8,6 +8,7 @@ from pathlib import Path
 import random
 import re
 import shutil
+import subprocess
 import sys
 import threading
 from typing import Any, Callable, Dict, Optional
@@ -15,9 +16,9 @@ from urllib.parse import urlparse
 import uuid as uuid_lib
 
 import requests
-from pronote_mcp.config import PronoteSettings, save_env_config
+from pronote_mcp.config import PronoteSettings, get_app_data_dir, save_env_config
 
-_SSO_LOG_FILE = Path.cwd() / "sso_debug.log"
+_SSO_LOG_FILE = get_app_data_dir() / "sso_debug.log"
 
 
 def get_sso_logger(log_path: Optional[Path] = None) -> logging.Logger:
@@ -25,7 +26,11 @@ def get_sso_logger(log_path: Optional[Path] = None) -> logging.Logger:
     logger = logging.getLogger("pronote_mcp.sso")
     logger.setLevel(logging.DEBUG)
     logger.propagate = False
-    target_file = (log_path or _SSO_LOG_FILE).resolve()
+    target_file = (log_path or (get_app_data_dir() / "sso_debug.log")).resolve()
+    try:
+        target_file.parent.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        pass
 
     if not any(isinstance(h, logging.StreamHandler) and not isinstance(h, logging.FileHandler) for h in logger.handlers):
         sh = logging.StreamHandler(sys.stderr)
@@ -69,9 +74,25 @@ def _launch_browser_context(
             log.warning("Échec lancement %s: %s", label, exc)
             last_err = exc
 
+    try:
+        log.info("Aucun navigateur système détecté, installation automatique de Chromium via Playwright...")
+        subprocess.run(
+            [sys.executable, "-m", "playwright", "install", "chromium"],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=180,
+        )
+        browser = p.chromium.launch(headless=False)
+        context = browser.new_context()
+        log.info("Navigateur Chromium téléchargé et lancé avec succès.")
+        return browser, context
+    except Exception as install_exc:
+        last_err = install_exc
+
     raise RuntimeError(
-        "Impossible de lancer Edge ou Chrome via Playwright. "
-        "Vérifiez qu'un navigateur est installé sur votre ordinateur."
+        "Impossible de lancer Edge, Chrome ou Chromium via Playwright. "
+        "Exécutez `playwright install chromium` ou vérifiez qu'un navigateur est installé."
     ) from last_err
 
 

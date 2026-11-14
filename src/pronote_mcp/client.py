@@ -20,8 +20,7 @@ if hasattr(pronotepy, "pronoteAPI") and hasattr(pronotepy.pronoteAPI, "HEADERS_M
     pronotepy.pronoteAPI.HEADERS_MOBILE = {
         "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148"
     }
-from pronote_mcp.config import PronoteSettings, load_settings_or_none
-from pronote_mcp.setup_ui import open_setup_popup
+from pronote_mcp.config import PronoteSettings, load_settings_or_none, resolve_env_path
 
 logger = logging.getLogger("pronote_mcp.client")
 
@@ -40,16 +39,15 @@ class PronoteSessionManager:
         """Get or create a persistent device UUID to avoid triggering 'new device' alerts."""
         if self.settings and self.settings.uuid:
             return self.settings.uuid
-        uuid_file = ".device_uuid"
+        uuid_file = resolve_env_path().parent / ".device_uuid"
         try:
-            if os.path.exists(uuid_file):
-                with open(uuid_file, "r", encoding="utf-8") as f:
-                    content = f.read().strip()
-                    if content:
-                        return content
+            if uuid_file.exists():
+                content = uuid_file.read_text(encoding="utf-8").strip()
+                if content:
+                    return content
             new_id = uuid.uuid4().hex
-            with open(uuid_file, "w", encoding="utf-8") as f:
-                f.write(new_id)
+            uuid_file.parent.mkdir(parents=True, exist_ok=True)
+            uuid_file.write_text(new_id, encoding="utf-8")
             return new_id
         except Exception:
             return uuid.uuid4().hex
@@ -198,31 +196,6 @@ class PronoteSessionManager:
         self._save_cached_session(client)
         self._start_keep_alive(client)
         return client
-
-    async def configure_via_popup(self) -> bool:
-        """Open the secure local setup popup and reload settings if saved."""
-        initial: Dict[str, str] = {}
-        if self.settings:
-            initial = {
-                "PRONOTE_URL": self.settings.url,
-                "PRONOTE_ACCOUNT_TYPE": self.settings.account_type,
-                "PRONOTE_ENT": self.settings.ent or "",
-                "PRONOTE_USERNAME": self.settings.username or "",
-                "PRONOTE_DEVICE_NAME": self.settings.device_name or "MCP Assistant",
-            }
-        new_settings = await asyncio.to_thread(
-            open_setup_popup,
-            None,
-            self.list_supported_ents(),
-            initial,
-        )
-        if new_settings is None:
-            return False
-        self.settings = new_settings
-        self._active_child_name = new_settings.child_name
-        self._client = None
-        self._clear_cached_session()
-        return True
 
     async def configure_via_browser(
         self,

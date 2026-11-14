@@ -29,7 +29,7 @@
 <table>
   <tr>
     <td align="center" width="33%">
-      <img src="assets/logos/pronote.svg" alt="Pronote" height="44" /><br /><br />
+      <img src="assets/logos/pronote.png" alt="Pronote" height="44" /><br /><br />
       <strong>Pronote (+ ENT)</strong> &nbsp;<img src="https://img.shields.io/badge/Stable-16a34a?style=flat-square" alt="Stable" /><br />
       <sub>Toutatice, MonBureauNumérique, Île-de-France, Atrium…</sub><br /><br />
       <code>Browser SSO + 2FA + QR Token</code>

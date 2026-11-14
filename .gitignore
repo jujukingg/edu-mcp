@@ -26,12 +26,16 @@ wheels/
 # Secrets & Sessions
 .env
 .env.test
+profiles/
+switch_account.py
+switch_to_*.bat
 sso_debug.log
 *.pkl
 .session_cache.pkl
 .device_uuid
 
-# Testing
+# Testing & Debug
 .pytest_cache/
+.playwright-mcp/
 .coverage
 htmlcov/

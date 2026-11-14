@@ -180,7 +180,19 @@ class PronoteSessionManager:
                 uuid=self._stable_uuid,
             )
 
-        if not getattr(client, "logged_in", False):
+        if getattr(client, "logged_in", False):
+            if self.settings.is_token_auth and getattr(client, "password", None):
+                new_token = client.password
+                if new_token and new_token != token_val:
+                    logger.info("Updating rotated Pronote token in configuration")
+                    from pronote_mcp.config import save_env_config
+                    from pydantic import SecretStr
+                    try:
+                        save_env_config({"PRONOTE_TOKEN": new_token})
+                        self.settings.token = SecretStr(new_token)
+                    except Exception as err:
+                        logger.warning("Could not persist rotated token: %s", err)
+        else:
             raise ConnectionError("Failed to authenticate with Pronote. Check your credentials.")
 
         self._save_cached_session(client)
@@ -234,7 +246,6 @@ class PronoteSessionManager:
         self.settings = new_settings
         self._active_child_name = new_settings.child_name
         self._client = None
-        self._clear_cached_session()
         return new_settings
 
     async def ensure_configured(self) -> PronoteSettings:

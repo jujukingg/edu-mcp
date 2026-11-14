@@ -117,7 +117,7 @@ Or from a cloned repository:
     "edu-mcp": {
       "command": "python",
       "args": ["-m", "edu_mcp"],
-      "cwd": "/path/to/pronote_mcp"
+      "cwd": "/path/to/edu-mcp"
     }
   }
 }
@@ -198,7 +198,7 @@ Just ask your assistant:
 
 ```bash
 git clone https://github.com/jujukingg/edu-mcp.git
-cd pronote-mcp
+cd edu-mcp
 pip install -e ".[dev]"
 pytest tests/unit -v
 ```

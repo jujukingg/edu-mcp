@@ -117,7 +117,7 @@ Ou depuis un dépôt cloné :
     "edu-mcp": {
       "command": "python",
       "args": ["-m", "edu_mcp"],
-      "cwd": "/chemin/vers/pronote_mcp"
+      "cwd": "/chemin/vers/edu-mcp"
     }
   }
 }
@@ -198,7 +198,7 @@ Demandez simplement à votre assistant :
 
 ```bash
 git clone https://github.com/jujukingg/edu-mcp.git
-cd pronote-mcp
+cd edu-mcp
 pip install -e ".[dev]"
 pytest tests/unit -v
 ```

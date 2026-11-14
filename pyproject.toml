@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "edu-mcp"
-version = "1.0.0"
+version = "1.0.1"
 description = "Unified Model Context Protocol (MCP) server for French school platforms (Pronote, ÉcoleDirecte, Skolengo, ENT)."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -21,7 +21,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
-    "mcp>=2.0.0",
+    "mcp>=1.20.0,<2.0.0",
     "pronotepy>=2.11.0",
     "ecoledirecte-py-client>=0.2.1",
     "httpx>=0.28.0",

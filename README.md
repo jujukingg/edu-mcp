@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/logo.png" alt="Edu MCP" width="112" />
+<img src="https://raw.githubusercontent.com/jujukingg/edu-mcp/main/assets/logo.png" alt="Edu MCP" width="112" />
 
 <h1>Edu MCP</h1>
 
@@ -10,14 +10,14 @@
 </p>
 
 <p>
-  <a href="README.md"><strong>English</strong></a> · <a href="README.fr.md">Français</a>
+  <a href="https://github.com/jujukingg/edu-mcp/blob/main/README.md"><strong>English</strong></a> · <a href="https://github.com/jujukingg/edu-mcp/blob/main/README.fr.md">Français</a>
 </p>
 
 <p>
   <a href="https://github.com/jujukingg/edu-mcp/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/jujukingg/edu-mcp/ci.yml?style=flat-square&logo=github&label=CI" alt="CI" /></a>
   <a href="https://pypi.org/project/edu-mcp/"><img src="https://img.shields.io/badge/PyPI-edu--mcp-3775A9?style=flat-square&logo=pypi&logoColor=white" alt="PyPI" /></a>
   <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.10+" />
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-16a34a?style=flat-square" alt="MIT License" /></a>
+  <a href="https://github.com/jujukingg/edu-mcp/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-16a34a?style=flat-square" alt="MIT License" /></a>
 </p>
 
 </div>
@@ -29,19 +29,19 @@
 <table>
   <tr>
     <td align="center" width="33%">
-      <img src="assets/logos/pronote.png" alt="Pronote" height="44" /><br /><br />
+      <img src="https://raw.githubusercontent.com/jujukingg/edu-mcp/main/assets/logos/pronote.png" alt="Pronote" height="44" /><br /><br />
       <strong>Pronote (+ ENT)</strong> &nbsp;<img src="https://img.shields.io/badge/Stable-16a34a?style=flat-square" alt="Stable" /><br />
       <sub>Toutatice, MonBureauNumérique, Île-de-France, Atrium…</sub><br /><br />
       <code>Browser SSO + 2FA + QR Token</code>
     </td>
     <td align="center" width="33%">
-      <img src="assets/logos/ecoledirecte.png" alt="ÉcoleDirecte" height="44" /><br /><br />
+      <img src="https://raw.githubusercontent.com/jujukingg/edu-mcp/main/assets/logos/ecoledirecte.png" alt="ÉcoleDirecte" height="44" /><br /><br />
       <strong>ÉcoleDirecte</strong> &nbsp;<img src="https://img.shields.io/badge/Beta-d97706?style=flat-square" alt="Beta" /><br />
       <sub>Student &amp; Family multi-child spaces</sub><br /><br />
       <code>Credentials + QCM 2FA</code>
     </td>
     <td align="center" width="33%">
-      <img src="assets/logos/skolengo.png" alt="Skolengo" height="44" /><br /><br />
+      <img src="https://raw.githubusercontent.com/jujukingg/edu-mcp/main/assets/logos/skolengo.png" alt="Skolengo" height="44" /><br /><br />
       <strong>Skolengo</strong> &nbsp;<img src="https://img.shields.io/badge/Beta-d97706?style=flat-square" alt="Beta" /><br />
       <sub>School search &amp; federated ENT login</sub><br /><br />
       <code>OAuth2 PKCE Browser</code>
@@ -206,5 +206,5 @@ pytest tests/unit -v
 ---
 
 <p align="center">
-  Released under the <a href="LICENSE">MIT License</a>.
+  Released under the <a href="https://github.com/jujukingg/edu-mcp/blob/main/LICENSE">MIT License</a>.
 </p>

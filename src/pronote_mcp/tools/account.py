@@ -91,6 +91,7 @@ def register_account_tools(
         pronote_url: str = "",
         account_type: str = "student",
         device_name: str = "MCP Assistant",
+        env_file: str = "",
     ) -> str:
         clean_url = pronote_url.strip()
         if not clean_url:
@@ -105,8 +106,10 @@ def register_account_tools(
             pronote_url=clean_url,
             account_type=account_type,
             device_name=device_name,
+            env_path=env_file.strip() or None,
         )
+        target_label = env_file.strip() or ".env"
         return (
             f"Compte Pronote configuré avec succès pour {saved.url} "
-            f"(type={saved.account_type}). Le jeton durable a été enregistré dans le fichier .env local."
+            f"(type={saved.account_type}). Le jeton durable a été enregistré dans {target_label}."
         )

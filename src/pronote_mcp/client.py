@@ -207,15 +207,19 @@ class PronoteSessionManager:
         pronote_url: str,
         account_type: str = "student",
         device_name: str = "MCP Assistant",
+        env_path: Optional[Any] = None,
     ) -> PronoteSettings:
         """Open the official Pronote/ENT page directly in a native browser and save a durable token."""
+        from pathlib import Path
         from pronote_mcp.browser_auth import authenticate_via_browser
 
+        target_env = Path(env_path) if env_path else None
         new_settings = await asyncio.to_thread(
             authenticate_via_browser,
             target_url=pronote_url,
             account_type=account_type,
             device_name=device_name,
+            env_path=target_env,
         )
         self.settings = new_settings
         self._active_child_name = new_settings.child_name

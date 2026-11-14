@@ -159,9 +159,17 @@ def _decode_qr_data_url(data_url: str) -> Dict[str, Any]:
     b64_part = data_url.split("base64,", 1)[1]
     raw_bytes = base64.b64decode(b64_part)
     arr = np.frombuffer(raw_bytes, dtype=np.uint8)
-    img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+    img = cv2.imdecode(arr, cv2.IMREAD_UNCHANGED)
     if img is None:
         raise ValueError("Impossible de décoder l'image PNG du QR Code.")
+    # Composite transparent PNGs onto white so dark modules aren't lost on black.
+    if img.ndim == 3 and img.shape[2] == 4:
+        alpha = img[:, :, 3:4] / 255.0
+        bgr = img[:, :, :3]
+        img = (bgr * alpha + 255.0 * (1.0 - alpha)).astype(np.uint8)
+    if img.ndim == 3:
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    img = cv2.copyMakeBorder(img, 24, 24, 24, 24, cv2.BORDER_CONSTANT, value=255)
     decoded, _, _ = cv2.QRCodeDetector().detectAndDecode(img)
     if not decoded:
         raise ValueError("Impossible de lire le QR Code généré par Pronote.")
@@ -209,11 +217,33 @@ def _extract_qr_via_browser_dom(page: Any, pin: str, logger: logging.Logger) -> 
     gen_btn = dlg.get_by_role("button", name=re.compile(r"générer", re.I)).first
     gen_btn.click(timeout=6000)
 
-    logger.info("QR DOM [5/5] : attente et décodage de l'image QR...")
+    logger.info("QR DOM [5/5] : attente de l'image QR...")
     qr_img = dlg.locator('img[src^="data:image/png"]').first
     qr_img.wait_for(state="visible", timeout=8000)
-    src = qr_img.get_attribute("src", timeout=5000) or ""
-    qr_data = _decode_qr_data_url(src)
+    logger.info("QR DOM [5a] : image QR visible, tentative décodage natif navigateur...")
+    qr_data: Optional[Dict[str, Any]] = None
+    try:
+        raw_js = qr_img.evaluate(
+            """async (img) => {
+                if (!('BarcodeDetector' in window)) return null;
+                try {
+                    const det = new BarcodeDetector({ formats: ['qr_code'] });
+                    const res = await det.detect(img);
+                    return res && res.length ? res[0].rawValue : null;
+                } catch (e) {
+                    return null;
+                }
+            }"""
+        )
+        if isinstance(raw_js, str) and raw_js.strip().startswith("{"):
+            qr_data = json.loads(raw_js)
+    except Exception:
+        qr_data = None
+
+    if qr_data is None:
+        logger.info("QR DOM [5b] : repli sur décodage OpenCV...")
+        src = qr_img.get_attribute("src", timeout=5000) or ""
+        qr_data = _decode_qr_data_url(src)
     logger.info("QR Code Pronote décodé avec succès (url=%s).", qr_data.get("url"))
     return qr_data
 

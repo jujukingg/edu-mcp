@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional
 from mcp.server.fastmcp import FastMCP
 from pronote_mcp.client import PronoteSessionManager
 from pronote_mcp.models import LessonDTO
+from pronote_mcp.utils import map_lesson
 
 
 def register_timetable_tools(
@@ -14,7 +15,7 @@ def register_timetable_tools(
 
     @server.tool(
         name="pronote_get_timetable",
-        description="Get lessons and schedule for a date range (defaults to today). Format: YYYY-MM-DD.",
+        description="Get lessons, schedule, and pedagogical lesson content for a date range (defaults to today). Format: YYYY-MM-DD.",
     )
     async def pronote_get_timetable(
         date_from: Optional[str] = None, date_to: Optional[str] = None
@@ -25,28 +26,7 @@ def register_timetable_tools(
 
         def _fetch_lessons(target: Any) -> List[LessonDTO]:
             raw_lessons = target.lessons(d_from, d_to)
-            lessons: List[LessonDTO] = []
-            for lesson in raw_lessons:
-                subject_name = getattr(lesson.subject, "name", str(lesson.subject or "Sans matière"))
-                teacher_name = getattr(lesson.teacher, "name", str(lesson.teacher or "")) if getattr(lesson, "teacher", None) else None
-                classroom_name = getattr(lesson.classroom, "name", str(lesson.classroom or "")) if getattr(lesson, "classroom", None) else None
-                
-                start_iso = lesson.start.isoformat() if hasattr(lesson.start, "isoformat") else str(lesson.start)
-                end_iso = lesson.end.isoformat() if hasattr(lesson.end, "isoformat") else str(lesson.end)
-
-                lessons.append(
-                    LessonDTO(
-                        id=str(getattr(lesson, "id", f"{start_iso}_{subject_name}")),
-                        subject=subject_name,
-                        teacher=teacher_name,
-                        classroom=classroom_name,
-                        start=start_iso,
-                        end=end_iso,
-                        status=str(getattr(lesson, "status", "normal")),
-                        canceled=bool(getattr(lesson, "canceled", False)),
-                        memo=getattr(lesson, "memo", None),
-                    )
-                )
+            lessons = [map_lesson(lesson) for lesson in raw_lessons]
             return sorted(lessons, key=lambda l: l.start)
 
         res_dtos = await session_manager.execute_on_target(_fetch_lessons)

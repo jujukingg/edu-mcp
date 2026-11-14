@@ -27,6 +27,30 @@ class UserProfileDTO(BaseModel):
     children: List[ChildDTO] = Field(default_factory=list)
 
 
+class AttachmentDTO(BaseModel):
+    """Generic attachment metadata for lessons, homework, and news."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: str = ""
+    name: str
+    url: str = ""
+    type: Optional[str] = None
+    source_type: Optional[str] = None
+    source_id: Optional[str] = None
+
+
+class LessonContentDTO(BaseModel):
+    """Pedagogical content associated with a timetable lesson."""
+
+    model_config = ConfigDict(frozen=True)
+
+    title: Optional[str] = None
+    description: Optional[str] = None
+    category: Optional[str] = None
+    files: List[AttachmentDTO] = Field(default_factory=list)
+
+
 class LessonDTO(BaseModel):
     """Timetable lesson entry."""
 
@@ -41,6 +65,8 @@ class LessonDTO(BaseModel):
     status: str = "normal"
     canceled: bool = False
     memo: Optional[str] = None
+    virtual_classrooms: List[str] = Field(default_factory=list)
+    content: Optional[LessonContentDTO] = None
 
 
 class HomeworkFileDTO(BaseModel):
@@ -157,6 +183,7 @@ class NewsItemDTO(BaseModel):
     content: str
     category: Optional[str] = None
     read: bool = True
+    files: List[AttachmentDTO] = Field(default_factory=list)
 
 
 class CanteenMenuDTO(BaseModel):
@@ -177,3 +204,155 @@ class CanteenMenuDTO(BaseModel):
     def dishes(self) -> List[str]:
         """Convenience property for accessing all dishes."""
         return self.all_dishes
+
+
+class DiscussionDTO(BaseModel):
+    """Read-only summary of a Pronote discussion thread."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    subject: str
+    creator: Optional[str] = None
+    date: str
+    unread: bool = False
+    closed: bool = False
+    participants: List[str] = Field(default_factory=list)
+    labels: List[str] = Field(default_factory=list)
+
+
+class MessageDTO(BaseModel):
+    """Single message inside a Pronote discussion thread."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    author: Optional[str] = None
+    content: str
+    date: str
+    seen: bool = True
+
+
+class AcquisitionDTO(BaseModel):
+    """Competency acquisition level inside an evaluation."""
+
+    model_config = ConfigDict(frozen=True)
+
+    name: str
+    domain: Optional[str] = None
+    pillar: Optional[str] = None
+    abbreviation: Optional[str] = None
+    level: str
+    coefficient: Optional[str] = None
+
+
+class EvaluationDTO(BaseModel):
+    """Competency-based evaluation entry."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    name: str
+    subject: str
+    teacher: Optional[str] = None
+    date: str
+    domain: Optional[str] = None
+    description: Optional[str] = None
+    coefficient: Optional[str] = None
+    acquisitions: List[AcquisitionDTO] = Field(default_factory=list)
+
+
+class ReportSubjectDTO(BaseModel):
+    """Subject appreciation inside a period report."""
+
+    model_config = ConfigDict(frozen=True)
+
+    subject: str
+    comments: List[str] = Field(default_factory=list)
+
+
+class ReportDTO(BaseModel):
+    """School period report card appreciations."""
+
+    model_config = ConfigDict(frozen=True)
+
+    period: str
+    overall_comments: List[str] = Field(default_factory=list)
+    subjects: List[ReportSubjectDTO] = Field(default_factory=list)
+
+
+class TeachingStaffDTO(BaseModel):
+    """Teacher / staff member and associated subjects."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    name: str
+    type: Optional[str] = None
+    subjects: List[str] = Field(default_factory=list)
+
+
+class DownloadedFileDTO(BaseModel):
+    """Metadata for a file downloaded or exported to local storage."""
+
+    model_config = ConfigDict(frozen=True)
+
+    filename: str
+    saved_path: str
+    size_bytes: int
+    source_type: str
+
+
+class GradeSimulationDTO(BaseModel):
+    """Result of simulating a hypothetical grade."""
+
+    model_config = ConfigDict(frozen=True)
+
+    subject: str
+    period: str
+    current_subject_average: Optional[float] = None
+    simulated_subject_average: float
+    subject_delta: Optional[float] = None
+    current_overall_average: Optional[float] = None
+    simulated_overall_average: Optional[float] = None
+    overall_delta: Optional[float] = None
+    notes: str = ""
+
+
+class SubjectProgressionDTO(BaseModel):
+    """Comparison of a subject's average across two periods and vs class."""
+
+    model_config = ConfigDict(frozen=True)
+
+    subject: str
+    previous_average: Optional[float] = None
+    current_average: Optional[float] = None
+    delta_period: Optional[float] = None
+    class_average: Optional[float] = None
+    gap_vs_class: Optional[float] = None
+
+
+class ProgressionAnalysisDTO(BaseModel):
+    """Overall academic progression between two school periods."""
+
+    model_config = ConfigDict(frozen=True)
+
+    previous_period: Optional[str] = None
+    current_period: str
+    current_overall: Optional[float] = None
+    previous_overall: Optional[float] = None
+    overall_delta: Optional[float] = None
+    subjects: List[SubjectProgressionDTO] = Field(default_factory=list)
+
+
+class WeeklyRadarDTO(BaseModel):
+    """Weekly academic radar aggregating homework, schedule alerts, and unread messages."""
+
+    model_config = ConfigDict(frozen=True)
+
+    period_from: str
+    period_to: str
+    urgent_homework: List[HomeworkDTO] = Field(default_factory=list)
+    canceled_or_modified_lessons: List[LessonDTO] = Field(default_factory=list)
+    upcoming_tests: List[LessonDTO] = Field(default_factory=list)
+    unread_discussions_count: int = 0

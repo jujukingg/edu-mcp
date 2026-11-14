@@ -4,7 +4,8 @@ import datetime
 import json
 from mcp.server.fastmcp import FastMCP
 from pronote_mcp.client import PronoteSessionManager
-from pronote_mcp.models import HomeworkDTO, LessonDTO, UserProfileDTO
+from pronote_mcp.models import DiscussionDTO, HomeworkDTO, UserProfileDTO
+from pronote_mcp.utils import map_lesson, to_iso
 
 
 def register_resources(
@@ -46,23 +47,7 @@ def register_resources(
 
         def _fetch_today(target):
             lessons = target.lessons(today, today)
-            out = []
-            for l in lessons:
-                start_iso = l.start.isoformat() if hasattr(l.start, "isoformat") else str(l.start)
-                end_iso = l.end.isoformat() if hasattr(l.end, "isoformat") else str(l.end)
-                out.append(
-                    LessonDTO(
-                        id=str(getattr(l, "id", f"{start_iso}")),
-                        subject=getattr(l.subject, "name", str(l.subject or "")),
-                        teacher=getattr(l.teacher, "name", str(l.teacher or "")) if getattr(l, "teacher", None) else None,
-                        classroom=getattr(l.classroom, "name", str(l.classroom or "")) if getattr(l, "classroom", None) else None,
-                        start=start_iso,
-                        end=end_iso,
-                        status=str(getattr(l, "status", "normal")),
-                        canceled=bool(getattr(l, "canceled", False)),
-                        memo=getattr(l, "memo", None),
-                    ).model_dump()
-                )
+            out = [map_lesson(l).model_dump() for l in lessons]
             return sorted(out, key=lambda x: x["start"])
 
         lessons_data = await session_manager.execute_on_target(_fetch_today)
@@ -124,3 +109,62 @@ def register_resources(
 
         overview_data = await session_manager.execute_on_target(_fetch_overview)
         return json.dumps(overview_data, ensure_ascii=False, indent=2)
+
+    @server.resource(
+        "pronote://messages/unread",
+        name="Unread Discussions",
+        description="List of unread Pronote discussion threads (read-only).",
+        mime_type="application/json",
+    )
+    async def get_unread_messages() -> str:
+        def _fetch_unread(target):
+            if not hasattr(target, "discussions"):
+                return []
+            out = []
+            for idx, d in enumerate(target.discussions(only_unread=True)):
+                out.append(
+                    DiscussionDTO(
+                        id=str(getattr(d, "id", f"disc_unread_{idx}")),
+                        subject=str(getattr(d, "subject", "Sans objet") or "Sans objet"),
+                        creator=str(getattr(d, "creator", "")) if getattr(d, "creator", None) else None,
+                        date=to_iso(getattr(d, "date", "")),
+                        unread=True,
+                        closed=bool(getattr(d, "closed", False)),
+                    ).model_dump()
+                )
+            return out
+
+        data = await session_manager.execute_on_target(_fetch_unread)
+        return json.dumps(data, ensure_ascii=False, indent=2)
+
+    @server.resource(
+        "pronote://academics/weekly-radar",
+        name="Weekly Radar",
+        description="Summary of pending homework and canceled/modified lessons for the next 7 days.",
+        mime_type="application/json",
+    )
+    async def get_weekly_radar_resource() -> str:
+        today = datetime.date.today()
+        end_d = today + datetime.timedelta(days=7)
+
+        def _fetch_radar(target):
+            pending_hw = [
+                {
+                    "id": str(getattr(h, "id", "")),
+                    "subject": getattr(h.subject, "name", str(h.subject or "")),
+                    "due_date": to_iso(getattr(h, "date", getattr(h, "due_date", today))),
+                    "description": getattr(h, "description", ""),
+                }
+                for h in target.homework(today, end_d)
+                if not getattr(h, "done", False)
+            ]
+            alerts = []
+            for l in target.lessons(today, end_d):
+                dto = map_lesson(l)
+                status_l = dto.status.lower()
+                if dto.canceled or any(kw in status_l for kw in ("annul", "modif", "remplac", "déplac", "chang")):
+                    alerts.append(dto.model_dump())
+            return {"pending_homework": pending_hw, "schedule_alerts": alerts}
+
+        data = await session_manager.execute_on_target(_fetch_radar)
+        return json.dumps(data, ensure_ascii=False, indent=2)

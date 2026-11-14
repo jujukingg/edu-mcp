@@ -11,6 +11,7 @@ from pronote_mcp.models import (
     NewsItemDTO,
     PunishmentDTO,
 )
+from pronote_mcp.utils import map_attachments
 
 
 def register_school_life_tools(
@@ -117,15 +118,18 @@ def register_school_life_tools(
                 for info in raw_info:
                     d_val = getattr(info, "creation_date", getattr(info, "date", today))
                     d_str = d_val.isoformat() if hasattr(d_val, "isoformat") else str(d_val)
+                    info_id = str(getattr(info, "id", f"news_{d_str}_{getattr(info, 'title', '')}"))
+                    raw_files = getattr(info, "attachments", getattr(info, "files", None))
                     items.append(
                         NewsItemDTO(
-                            id=str(getattr(info, "id", f"news_{d_str}_{getattr(info, 'title', '')}")),
+                            id=info_id,
                             title=getattr(info, "title", "Information"),
                             author=getattr(info, "author", None),
                             date=d_str,
                             content=getattr(info, "content", ""),
                             category=getattr(info, "category", None),
                             read=bool(getattr(info, "read", True)),
+                            files=map_attachments(raw_files, "news", info_id),
                         )
                     )
             return sorted(items, key=lambda n: n.date, reverse=True)

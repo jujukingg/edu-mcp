@@ -10,6 +10,12 @@ try:
 except Exception:
     pass
 
+import pronotepy
+if hasattr(pronotepy, "pronoteAPI") and hasattr(pronotepy.pronoteAPI, "HEADERS_MOBILE"):
+    pronotepy.pronoteAPI.HEADERS_MOBILE = {
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148"
+    }
+
 from mcp.server.fastmcp import FastMCP
 from pronote_mcp.config import PronoteSettings, load_settings_or_none
 from pronote_mcp.client import PronoteSessionManager

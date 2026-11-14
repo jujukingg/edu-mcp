@@ -168,25 +168,51 @@ def _decode_qr_data_url(data_url: str) -> Dict[str, Any]:
     return json.loads(decoded)
 
 
+def _update_info_banner(page: Any, text: str) -> None:
+    """Update the in-page Pronote MCP banner text so the user sees live progress."""
+    try:
+        page.evaluate(
+            """(msg) => {
+                const bar = document.getElementById('pronote-mcp-info-banner');
+                if (bar) {
+                    const span = bar.querySelector('span');
+                    if (span) {
+                        span.innerHTML = '<strong style="color:#34d399;">Pronote MCP</strong> : ' + msg;
+                    }
+                }
+            }""",
+            text,
+        )
+    except Exception:
+        pass
+
+
 def _extract_qr_via_browser_dom(page: Any, pin: str, logger: logging.Logger) -> Dict[str, Any]:
     """Automate Pronote's built-in 'QR code de l'application' modal in the already logged-in page."""
     logger.info("Extraction automatique du QR Code via l'interface Pronote ouverte...")
+    _update_info_banner(page, "Connexion réussie ! Génération automatique du jeton en cours, ne fermez pas cette fenêtre…")
+
+    logger.info("QR DOM [1/5] : recherche et clic sur le bouton QR code...")
     qr_btn = page.get_by_role("button", name=re.compile(r"qr\s*code", re.I)).first
     qr_btn.click(timeout=6000)
 
+    logger.info("QR DOM [2/5] : attente de la modale QR code...")
     dlg = page.locator('[role="dialog"]:visible').last
     dlg.wait_for(state="visible", timeout=6000)
 
+    logger.info("QR DOM [3/5] : saisie du PIN éphémère...")
     pin_input = dlg.locator("input").first
     pin_input.wait_for(state="visible", timeout=5000)
-    pin_input.fill(pin)
+    pin_input.fill(pin, timeout=5000)
 
+    logger.info("QR DOM [4/5] : clic sur Générer...")
     gen_btn = dlg.get_by_role("button", name=re.compile(r"générer", re.I)).first
     gen_btn.click(timeout=6000)
 
+    logger.info("QR DOM [5/5] : attente et décodage de l'image QR...")
     qr_img = dlg.locator('img[src^="data:image/png"]').first
     qr_img.wait_for(state="visible", timeout=8000)
-    src = qr_img.get_attribute("src") or ""
+    src = qr_img.get_attribute("src", timeout=5000) or ""
     qr_data = _decode_qr_data_url(src)
     logger.info("QR Code Pronote décodé avec succès (url=%s).", qr_data.get("url"))
     return qr_data

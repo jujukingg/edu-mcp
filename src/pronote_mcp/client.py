@@ -15,6 +15,11 @@ except Exception:
 
 import pronotepy
 import pronotepy.ent
+
+if hasattr(pronotepy, "pronoteAPI") and hasattr(pronotepy.pronoteAPI, "HEADERS_MOBILE"):
+    pronotepy.pronoteAPI.HEADERS_MOBILE = {
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148"
+    }
 from pronote_mcp.config import PronoteSettings, load_settings_or_none
 from pronote_mcp.setup_ui import open_setup_popup
 
@@ -64,6 +69,11 @@ class PronoteSessionManager:
             if getattr(client, "logged_in", False):
                 client.session_check()
                 if getattr(client, "logged_in", False):
+                    try:
+                        if hasattr(client, "periods"):
+                            pronotepy.Period.instances = list(client.periods)
+                    except Exception:
+                        pass
                     logger.info("Reusing existing Pronote session from cache (no new login alert)")
                     return client
         except Exception as exc:

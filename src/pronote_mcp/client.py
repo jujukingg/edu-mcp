@@ -15,7 +15,8 @@ except Exception:
 
 import pronotepy
 import pronotepy.ent
-from pronote_mcp.config import PronoteSettings
+from pronote_mcp.config import PronoteSettings, load_settings_or_none
+from pronote_mcp.setup_ui import open_setup_popup
 
 logger = logging.getLogger("pronote_mcp.client")
 
@@ -23,16 +24,16 @@ logger = logging.getLogger("pronote_mcp.client")
 class PronoteSessionManager:
     """Manages authentication, persistent session caching, keep-alive, and student/parent context."""
 
-    def __init__(self, settings: PronoteSettings):
-        self.settings = settings
+    def __init__(self, settings: Optional[PronoteSettings] = None):
+        self.settings: Optional[PronoteSettings] = settings
         self._client: Optional[Any] = None
-        self._active_child_name: Optional[str] = settings.child_name
+        self._active_child_name: Optional[str] = settings.child_name if settings else None
         self._keep_alive_ctx: Optional[Any] = None
         self._stable_uuid = self._get_or_create_device_uuid()
 
     def _get_or_create_device_uuid(self) -> str:
         """Get or create a persistent device UUID to avoid triggering 'new device' alerts."""
-        if self.settings.uuid:
+        if self.settings and self.settings.uuid:
             return self.settings.uuid
         uuid_file = ".device_uuid"
         try:
@@ -50,6 +51,8 @@ class PronoteSessionManager:
 
     def _load_cached_session(self) -> Optional[Any]:
         """Attempt to restore an existing session from disk to prevent new login notifications."""
+        if not self.settings:
+            return None
         session_path = self.settings.session_file
         if not session_path or not os.path.exists(session_path):
             return None
@@ -174,8 +177,51 @@ class PronoteSessionManager:
         self._start_keep_alive(client)
         return client
 
+    async def configure_via_popup(self) -> bool:
+        """Open the secure local setup popup and reload settings if saved."""
+        initial: Dict[str, str] = {}
+        if self.settings:
+            initial = {
+                "PRONOTE_URL": self.settings.url,
+                "PRONOTE_ACCOUNT_TYPE": self.settings.account_type,
+                "PRONOTE_ENT": self.settings.ent or "",
+                "PRONOTE_USERNAME": self.settings.username or "",
+                "PRONOTE_DEVICE_NAME": self.settings.device_name or "MCP Assistant",
+            }
+        new_settings = await asyncio.to_thread(
+            open_setup_popup,
+            None,
+            self.list_supported_ents(),
+            initial,
+        )
+        if new_settings is None:
+            return False
+        self.settings = new_settings
+        self._active_child_name = new_settings.child_name
+        self._client = None
+        self._clear_cached_session()
+        return True
+
+    async def ensure_configured(self) -> PronoteSettings:
+        """Ensure valid PronoteSettings are loaded, opening the secure popup if missing."""
+        if self.settings is not None:
+            return self.settings
+        loaded = load_settings_or_none()
+        if loaded is not None:
+            self.settings = loaded
+            self._active_child_name = loaded.child_name
+            return loaded
+        configured = await self.configure_via_popup()
+        if not configured or self.settings is None:
+            raise RuntimeError(
+                "Configuration Pronote annulée ou manquante. "
+                "Relancez la configuration ou remplissez le fichier .env localement."
+            )
+        return self.settings
+
     async def get_client(self) -> Any:
         """Get or initialize the authenticated Pronote client."""
+        await self.ensure_configured()
         if self._client is None or not getattr(self._client, "logged_in", False):
             self._client = await asyncio.to_thread(self._connect_sync)
         return self._client

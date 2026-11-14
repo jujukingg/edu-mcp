@@ -77,3 +77,16 @@ def register_account_tools(
     )
     async def pronote_list_ents() -> List[str]:
         return PronoteSessionManager.list_supported_ents()
+
+    @server.tool(
+        name="pronote_setup_account",
+        description=(
+            "Open a secure local popup window so the user can enter or update Pronote credentials "
+            "directly into the local .env file without sharing secrets in the chat."
+        ),
+    )
+    async def pronote_setup_account() -> str:
+        saved = await session_manager.configure_via_popup()
+        if saved:
+            return "Configuration Pronote enregistrée localement dans .env. Aucun secret n'a transité par le chat."
+        return "Configuration annulée par l'utilisateur."

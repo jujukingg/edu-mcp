@@ -11,7 +11,7 @@ except Exception:
     pass
 
 from mcp.server.fastmcp import FastMCP
-from pronote_mcp.config import PronoteSettings
+from pronote_mcp.config import PronoteSettings, load_settings_or_none
 from pronote_mcp.client import PronoteSessionManager
 from pronote_mcp.tools import register_all_tools
 from pronote_mcp.resources import register_resources
@@ -28,7 +28,9 @@ logger = logging.getLogger("pronote_mcp.server")
 def create_server(settings: Optional[PronoteSettings] = None) -> FastMCP:
     """Create and configure the Pronote MCP server instance."""
     if settings is None:
-        settings = PronoteSettings()
+        settings = load_settings_or_none()
+        if settings is None:
+            logger.info("No valid .env configuration found at startup; secure popup will be used on first request.")
 
     server = FastMCP(
         name="Pronote MCP",

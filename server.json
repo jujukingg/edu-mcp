@@ -3,7 +3,7 @@
   "name": "io.github.jujukingg/edu-mcp",
   "description": "Unified MCP server for French school platforms (Pronote, ÉcoleDirecte, Skolengo, ENT) with browser SSO/2FA.",
   "repository": {
-    "url": "https://github.com/jujukingg/pronote-mcp",
+    "url": "https://github.com/jujukingg/edu-mcp",
     "source": "github"
   },
   "version": "1.0.0",

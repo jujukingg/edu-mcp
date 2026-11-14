@@ -14,7 +14,7 @@
 </p>
 
 <p>
-  <a href="https://github.com/jujukingg/pronote-mcp/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/jujukingg/pronote-mcp/ci.yml?style=flat-square&logo=github&label=CI" alt="CI" /></a>
+  <a href="https://github.com/jujukingg/edu-mcp/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/jujukingg/edu-mcp/ci.yml?style=flat-square&logo=github&label=CI" alt="CI" /></a>
   <a href="https://pypi.org/project/edu-mcp/"><img src="https://img.shields.io/badge/PyPI-edu--mcp-3775A9?style=flat-square&logo=pypi&logoColor=white" alt="PyPI" /></a>
   <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.10+" />
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-16a34a?style=flat-square" alt="MIT License" /></a>
@@ -197,7 +197,7 @@ Just ask your assistant:
 ## Development
 
 ```bash
-git clone https://github.com/jujukingg/pronote-mcp.git
+git clone https://github.com/jujukingg/edu-mcp.git
 cd pronote-mcp
 pip install -e ".[dev]"
 pytest tests/unit -v

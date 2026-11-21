@@ -13,7 +13,7 @@
 <p>
   <a href="https://github.com/jujukingg/edu-mcp/blob/main/README.md"><strong>English</strong></a> · <a href="https://github.com/jujukingg/edu-mcp/blob/main/README.fr.md">Français</a>
 </p>
-[https://pypi.org/project/edu-mcp/](https://pypi.org/project/edu-mcp/)
+
 <p>
   <a href="https://github.com/jujukingg/edu-mcp/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/jujukingg/edu-mcp/ci.yml?style=flat-square&logo=github&label=CI" alt="CI" /></a>
   <a href="https://pypi.org/project/edu-mcp/"><img src="https://img.shields.io/badge/PyPI-edu--mcp-3775A9?style=flat-square&logo=pypi&logoColor=white" alt="PyPI" /></a>
